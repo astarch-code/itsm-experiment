@@ -10,7 +10,7 @@ import {
   AlertTriangle, Flame, Siren, HelpCircle, Play, GraduationCap, FileText, Download
 } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '${API_BASE_URL}';
+const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:3001' : window.location.origin);
 
 const SHIFT_DURATION_SEC = 600;
 
@@ -43,7 +43,7 @@ const TutorialBriefingScreen = ({ onContinue }) => {
           <GraduationCap className="text-cyan-400" size={48} />
         </div>
         <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Tutorial Introduction</h2>
-        
+
         <div className="text-slate-300 mb-6 text-left space-y-3">
           <p className="flex items-start gap-2">
             <span className="text-cyan-400 mt-1">•</span>
@@ -1129,12 +1129,13 @@ export default function App() {
     // Load pre-experiment survey questions
     const loadPreExperimentSurvey = async () => {
       try {
-        const response = await axios.get('${API_BASE_URL}/api/survey/pre-experiment');
+        const response = await axios.get(`${API_BASE_URL}/api/survey/pre-experiment`);
         setSurveyQuestions(response.data.questions);
         setSurveyType('pre-experiment');
+        setAppState('SURVEY'); // Переходим к опросу
       } catch (error) {
         console.error('Failed to load pre-experiment survey questions:', error);
-        // Skip to tutorial briefing if survey fails
+        // Если опрос не загружается, пропускаем его
         setShowTutorialBriefing(true);
       }
     };
@@ -1143,6 +1144,7 @@ export default function App() {
       loadPreExperimentSurvey();
     }
   }, [appState]);
+
 
   useEffect(() => {
     // Send participant parity on initialization
@@ -1159,7 +1161,7 @@ export default function App() {
     socket.on('tickets:update', setTickets);
     socket.on('ticket:new', t => setTickets(p => [t, ...p]));
     socket.on('agents:update', setAgents);
-    
+
     // Listen for AI mode changes from server
     socket.on('ai:mode_changed', (data) => {
       setAiMode(data.aiMode);
@@ -1246,7 +1248,7 @@ export default function App() {
         responses
       });
       setSurveyQuestions([]);
-      
+
       // Запускаем туториал сразу после опроса
       setShowTutorialBriefing(true);
     } catch (error) {
@@ -1354,7 +1356,7 @@ export default function App() {
     // Clear tutorial data first
     setTickets([]);
     setKb([]);
-    
+
     // Move to next stage (experiment)
     setCurrentStageIndex(2);
     setAppState('BRIEFING');
@@ -1367,7 +1369,7 @@ export default function App() {
         aiMode: newAiMode,
         participantParity
       });
-      
+
       if (response.data.success) {
         setAiMode(response.data.aiMode);
         setShowAIModeSelector(false);
