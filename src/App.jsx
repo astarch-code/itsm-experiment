@@ -14,6 +14,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.origin.inc
 
 const SHIFT_DURATION_SEC = 600;
 
+const [participantCompleted, setParticipantCompleted] = useState(false);
+
 const SCENARIOS = {
   1: {
     title: "Tutorial: Learn the Ticket System",
@@ -1117,6 +1119,14 @@ export default function App() {
     }
     setParticipantId(id);
 
+    const completed = localStorage.getItem(`experimentCompleted_${id}`);
+    if (completed === 'true') {
+      setParticipantCompleted(true);
+      setAppState('FINAL');
+      return;
+    }
+
+
     // Determine participant parity by last digit of ID
     const lastChar = id.charAt(id.length - 1);
     const isEven = !isNaN(lastChar) ? parseInt(lastChar) % 2 === 0 : Math.random() > 0.5;
@@ -1147,9 +1157,9 @@ export default function App() {
 
   useEffect(() => {
     // Send participant ID and parity on initialization
-    socket.emit('request:init', { 
+    socket.emit('request:init', {
       participantId: localStorage.getItem('participantId'),
-      participantParity 
+      participantParity
     });
 
     socket.on('init', (data) => {
@@ -1279,6 +1289,8 @@ export default function App() {
         participantParity,
         responses
       });
+
+      localStorage.setItem(`experimentCompleted_${participantId}`, 'true');
 
       // After completing post-experiment survey, show final screen
       setAppState('FINAL');
@@ -1416,7 +1428,7 @@ export default function App() {
   };
 
   // Final screen after completing all surveys
-  const FinalScreen = () => {
+  const FinalScreen = ({ onReset }) => {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
     return (
@@ -1425,26 +1437,45 @@ export default function App() {
           <div className="flex justify-center mb-4 sm:mb-6">
             <CheckCircle className="text-green-400" size={isMobile ? 48 : 64} />
           </div>
-          <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-8 text-white">Experiment Fully Completed!</h2>
+          <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-8 text-white">
+            {participantCompleted ? "Experiment Already Completed" : "Experiment Fully Completed!"}
+          </h2>
 
           <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-emerald-900/20 rounded-xl sm:rounded-2xl border border-emerald-500/30">
-            <div className="text-lg sm:text-xl font-bold text-emerald-300 mb-2">Thank you for your participation!</div>
+            <div className="text-lg sm:text-xl font-bold text-emerald-300 mb-2">
+              {participantCompleted ? "Welcome Back!" : "Thank you for your participation!"}
+            </div>
             <p className="text-slate-300 text-sm sm:text-base">
-              Your answers and experiment results have been successfully saved and will be used
-              for scientific research.
+              {participantCompleted
+                ? "You have already completed this experiment. Your data has been saved."
+                : "Your answers and experiment results have been successfully saved and will be used for scientific research."}
             </p>
           </div>
 
           <div className="text-slate-400 text-sm mb-6 sm:mb-8">
-            <p>You can close this tab. All data is already saved.</p>
+            <p>Participant ID: <span className="font-mono text-amber-400">{participantId}</span></p>
+            <p className="mt-2">You can close this tab. All data is already saved.</p>
           </div>
 
-          <button
-            onClick={() => window.location.reload()}
-            className="w-full bg-indigo-600 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-indigo-700 transition-colors text-sm sm:text-base min-h-[44px]"
-          >
-            Close
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full bg-indigo-600 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-indigo-700 transition-colors text-sm sm:text-base min-h-[44px]"
+            >
+              Close
+            </button>
+
+            <button
+              onClick={onReset}
+              className="w-full bg-rose-600/80 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-rose-700 transition-colors text-sm sm:text-base min-height-[44px] border border-rose-500/30"
+            >
+              Reset Experiment Data
+            </button>
+          </div>
+
+          <div className="mt-6 text-xs text-slate-500">
+            <p>Resetting will clear all local data and allow you to start the experiment again.</p>
+          </div>
         </div>
       </div>
     );
@@ -1743,7 +1774,21 @@ export default function App() {
       )}
 
       {/* Final screen after completing all surveys */}
-      {appState === 'FINAL' && <FinalScreen />}
+      {appState === 'FINAL' && (
+        <FinalScreen
+          onReset={() => {
+            // Очищаем все данные этого участника из localStorage
+            localStorage.removeItem(`experimentCompleted_${participantId}`);
+            localStorage.removeItem('participantId');
+            localStorage.removeItem('participantParity');
+            localStorage.removeItem('shiftEndTime');
+            localStorage.removeItem('shiftStage');
+
+            // Перезагружаем страницу для нового эксперимента
+            window.location.reload();
+          }}
+        />
+      )}
 
       {/* Finish Tutorial Button (shown during tutorial) */}
       {appState === 'ACTIVE' && currentStageIndex === 1 && (
