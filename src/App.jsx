@@ -100,7 +100,7 @@ const HtmlViewer = ({ onClose, isTutorialMode = false, onStartTutorial }) => {
           </div>
           <div className="flex items-center gap-2">
             <a
-              href="${API_BASE_URL}/instructions.html"
+              href={`${API_BASE_URL}/instructions.html`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600/30 border border-indigo-500/50 text-indigo-100 rounded-xl hover:bg-indigo-600 transition-colors text-sm"
@@ -129,7 +129,7 @@ const HtmlViewer = ({ onClose, isTutorialMode = false, onStartTutorial }) => {
 
           <iframe
             ref={iframeRef}
-            src="${API_BASE_URL}/instructions.html"
+            src={`${API_BASE_URL}/instructions.html`}
             className="w-full h-full"
             title="System Instructions"
             onLoad={handleIframeLoad}
@@ -1145,10 +1145,12 @@ export default function App() {
     }
   }, [appState]);
 
-
   useEffect(() => {
-    // Send participant parity on initialization
-    socket.emit('request:init', { participantParity });
+    // Send participant ID and parity on initialization
+    socket.emit('request:init', { 
+      participantId: localStorage.getItem('participantId'),
+      participantParity 
+    });
 
     socket.on('init', (data) => {
       setTickets(data.tickets || []);
@@ -1156,6 +1158,7 @@ export default function App() {
       setAgents(data.agents || []);
       if (data.aiMode) setAiMode(data.aiMode);
       if (data.participantParity) setParticipantParity(data.participantParity);
+      if (data.currentStage) setCurrentStageIndex(data.currentStage);
     });
 
     socket.on('tickets:update', setTickets);
@@ -1192,7 +1195,17 @@ export default function App() {
       addToast('Client', data.message, data.type);
     });
 
-    return () => socket.off();
+    return () => {
+      socket.off('init');
+      socket.off('tickets:update');
+      socket.off('ticket:new');
+      socket.off('agents:update');
+      socket.off('ai:mode_changed');
+      socket.off('bot:notification');
+      socket.off('ai:notification');
+      socket.off('ai:autonomous_action');
+      socket.off('client:notification');
+    };
   }, []);
 
   // LocalStorage logic
@@ -1242,7 +1255,7 @@ export default function App() {
   // Handle pre-experiment survey completion
   const handlePreExperimentSurveyComplete = async (responses) => {
     try {
-      await axios.post('${API_BASE_URL}/api/survey/pre-experiment/submit', {
+      await axios.post(`${API_BASE_URL}/api/survey/pre-experiment/submit`, {
         participantId,
         participantParity,
         responses
@@ -1261,7 +1274,7 @@ export default function App() {
   // Handle post-experiment survey completion
   const handlePostExperimentSurveyComplete = async (responses) => {
     try {
-      await axios.post('${API_BASE_URL}/api/survey/post-experiment/submit', {
+      await axios.post(`${API_BASE_URL}/api/survey/post-experiment/submit`, {
         participantId,
         participantParity,
         responses
@@ -1305,12 +1318,13 @@ export default function App() {
 
   const startShiftWithMode = async (selectedAiMode) => {
     try {
-      console.log(`Starting shift with stage: ${currentStageIndex}, parity: ${participantParity}, AI mode: ${selectedAiMode}`);
+      console.log(`Starting shift with stage: ${currentStageIndex}, parity: ${participantParity}, AI mode: ${selectedAiMode}, participantId: ${participantId}`);
 
       const response = await axios.post(`${API_BASE_URL}/admin/start`, {
         stage: currentStageIndex,
         aiMode: currentStageIndex === 2 && participantParity === 'even' ? selectedAiMode : 'normal',
-        participantParity
+        participantParity,
+        participantId
       });
 
       console.log('Admin start response:', response.data);
@@ -1369,9 +1383,10 @@ export default function App() {
   // Handle AI mode change during experiment
   const handleChangeAiMode = async (newAiMode) => {
     try {
-      const response = await axios.post('${API_BASE_URL}/admin/change-ai-mode', {
+      const response = await axios.post(`${API_BASE_URL}/admin/change-ai-mode`, {
         aiMode: newAiMode,
-        participantParity
+        participantParity,
+        participantId
       });
 
       if (response.data.success) {
