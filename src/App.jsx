@@ -1305,11 +1305,15 @@ export default function App() {
 
   const startShiftWithMode = async (selectedAiMode) => {
     try {
-      await axios.post('${API_BASE_URL}/admin/start', {
+      console.log(`Starting shift with stage: ${currentStageIndex}, parity: ${participantParity}, AI mode: ${selectedAiMode}`);
+
+      const response = await axios.post(`${API_BASE_URL}/admin/start`, {
         stage: currentStageIndex,
-        aiMode: currentStageIndex === 2 && participantParity === 'even' ? selectedAiMode : 'disabled',
+        aiMode: currentStageIndex === 2 && participantParity === 'even' ? selectedAiMode : 'normal',
         participantParity
       });
+
+      console.log('Admin start response:', response.data);
 
       if (currentStageIndex !== 1) {
         const duration = SHIFT_DURATION_SEC;
