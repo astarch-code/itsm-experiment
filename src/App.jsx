@@ -14,8 +14,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.origin.inc
 
 const SHIFT_DURATION_SEC = 600;
 
-const [participantCompleted, setParticipantCompleted] = useState(false);
-
 const SCENARIOS = {
   1: {
     title: "Tutorial: Learn the Ticket System",
@@ -1093,6 +1091,8 @@ export default function App() {
   const [showHtmlViewer, setShowHtmlViewer] = useState(false);
   const [htmlViewerMode, setHtmlViewerMode] = useState('reference'); // 'tutorial' or 'reference'
 
+  const [participantCompleted, setParticipantCompleted] = useState(false);
+
   const [tickets, setTickets] = useState([]);
   const [kb, setKb] = useState([]);
   const [agents, setAgents] = useState([]);
@@ -1110,22 +1110,37 @@ export default function App() {
   // Determine if bots are active (only at stage 2 for odd participants)
   const areAgentsOnline = currentStageIndex === 2 && participantParity === 'odd';
 
+  // Determine if the experiment is finished
+  useEffect(() => {
+    const savedParticipantId = localStorage.getItem('participantId');
+    if (!savedParticipantId) {
+      return;
+    }
+
+    const completed = localStorage.getItem(`experimentCompleted_${savedParticipantId}`);
+    if (completed === 'true') {
+      console.log('Participant already completed experiment:', savedParticipantId);
+      setParticipantId(savedParticipantId);
+      setParticipantCompleted(true);
+      setAppState('FINAL');
+      return;
+    }
+  }, []);
+
   // Generate or load participant ID and determine parity
   useEffect(() => {
+    // Если участник уже завершил эксперимент, не выполняем инициализацию
+    if (participantCompleted) {
+      return;
+    }
+
     let id = localStorage.getItem('participantId');
     if (!id) {
       id = 'P_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
       localStorage.setItem('participantId', id);
     }
+
     setParticipantId(id);
-
-    const completed = localStorage.getItem(`experimentCompleted_${id}`);
-    if (completed === 'true') {
-      setParticipantCompleted(true);
-      setAppState('FINAL');
-      return;
-    }
-
 
     // Determine participant parity by last digit of ID
     const lastChar = id.charAt(id.length - 1);
@@ -1139,13 +1154,12 @@ export default function App() {
     // Load pre-experiment survey questions
     const loadPreExperimentSurvey = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/survey/pre-experiment`);
+        const response = await axios.get('http://localhost:3001/api/survey/pre-experiment');
         setSurveyQuestions(response.data.questions);
         setSurveyType('pre-experiment');
-        setAppState('SURVEY'); // Переходим к опросу
       } catch (error) {
         console.error('Failed to load pre-experiment survey questions:', error);
-        // Если опрос не загружается, пропускаем его
+        // Skip to tutorial briefing if survey fails
         setShowTutorialBriefing(true);
       }
     };
@@ -1153,12 +1167,16 @@ export default function App() {
     if (appState === 'INTRO') {
       loadPreExperimentSurvey();
     }
-  }, [appState]);
+  }, [appState, participantCompleted]);
 
   useEffect(() => {
-    // Send participant ID and parity on initialization
+
+    if (participantCompleted) {
+      return;
+    }
+
+    // Send participant parity on initialization
     socket.emit('request:init', {
-      participantId: localStorage.getItem('participantId'),
       participantParity
     });
 
@@ -1216,7 +1234,7 @@ export default function App() {
       socket.off('ai:autonomous_action');
       socket.off('client:notification');
     };
-  }, []);
+  }, [participantCompleted]);
 
   // LocalStorage logic
   useEffect(() => {
@@ -1284,7 +1302,7 @@ export default function App() {
   // Handle post-experiment survey completion
   const handlePostExperimentSurveyComplete = async (responses) => {
     try {
-      await axios.post(`${API_BASE_URL}/api/survey/post-experiment/submit`, {
+      await axios.post('http://localhost:3001/api/survey/post-experiment/submit', {
         participantId,
         participantParity,
         responses
@@ -1296,6 +1314,7 @@ export default function App() {
       setAppState('FINAL');
     } catch (error) {
       console.error('Failed to submit post-experiment survey:', error);
+      localStorage.setItem(`experimentCompleted_${participantId}`, 'true');
       setAppState('FINAL');
     }
   };
@@ -1427,7 +1446,7 @@ export default function App() {
     }
   };
 
-  // Final screen after completing all surveys
+  // --- FINAL SCREEN WITH RESET BUTTON ---
   const FinalScreen = ({ onReset }) => {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
@@ -1438,17 +1457,15 @@ export default function App() {
             <CheckCircle className="text-green-400" size={isMobile ? 48 : 64} />
           </div>
           <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-8 text-white">
-            {participantCompleted ? "Experiment Already Completed" : "Experiment Fully Completed!"}
+            Experiment Completed
           </h2>
 
           <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-emerald-900/20 rounded-xl sm:rounded-2xl border border-emerald-500/30">
             <div className="text-lg sm:text-xl font-bold text-emerald-300 mb-2">
-              {participantCompleted ? "Welcome Back!" : "Thank you for your participation!"}
+              Thank you for your participation!
             </div>
             <p className="text-slate-300 text-sm sm:text-base">
-              {participantCompleted
-                ? "You have already completed this experiment. Your data has been saved."
-                : "Your answers and experiment results have been successfully saved and will be used for scientific research."}
+              Your answers and experiment results have been successfully saved and will be used for scientific research.
             </p>
           </div>
 
@@ -1467,7 +1484,7 @@ export default function App() {
 
             <button
               onClick={onReset}
-              className="w-full bg-rose-600/80 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-rose-700 transition-colors text-sm sm:text-base min-height-[44px] border border-rose-500/30"
+              className="w-full bg-rose-600/80 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-rose-700 transition-colors text-sm sm:text-base min-h-[44px] border border-rose-500/30"
             >
               Reset Experiment Data
             </button>
@@ -1497,6 +1514,22 @@ export default function App() {
       </div>
     </div>
   );
+
+  if (participantCompleted && appState === 'FINAL') {
+    return (
+      <FinalScreen
+        onReset={() => {
+          localStorage.removeItem(`experimentCompleted_${participantId}`);
+          localStorage.removeItem('participantId');
+          localStorage.removeItem('participantParity');
+          localStorage.removeItem('shiftEndTime');
+          localStorage.removeItem('shiftStage');
+
+          window.location.reload();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden relative">
