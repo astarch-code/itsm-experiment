@@ -1170,13 +1170,17 @@ export default function App() {
   }, [appState, participantCompleted]);
 
   useEffect(() => {
-
     if (participantCompleted) {
+      return;
+    }
+
+    if (!participantId || !participantParity) {
       return;
     }
 
     // Send participant parity on initialization
     socket.emit('request:init', {
+      participantId,
       participantParity
     });
 
@@ -1234,7 +1238,7 @@ export default function App() {
       socket.off('ai:autonomous_action');
       socket.off('client:notification');
     };
-  }, [participantCompleted]);
+  }, [participantCompleted, participantId, participantParity]);
 
   // LocalStorage logic
   useEffect(() => {
@@ -1302,7 +1306,7 @@ export default function App() {
   // Handle post-experiment survey completion
   const handlePostExperimentSurveyComplete = async (responses) => {
     try {
-      await axios.post('http://localhost:3001/api/survey/post-experiment/submit', {
+      await axios.post(`${API_BASE_URL}/api/survey/post-experiment/submit`, {
         participantId,
         participantParity,
         responses
