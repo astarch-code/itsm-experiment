@@ -276,16 +276,17 @@ const TicketTimer = ({ ticket }) => {
   );
 };
 
-// --- AI MODE SELECTOR ---
+// --- AI MODE SELECTOR (исправленный) ---
 const AIModeSelector = ({ aiMode, onClose, onConfirm }) => {
   const [selectedMode, setSelectedMode] = useState(aiMode);
 
   const handleConfirm = () => {
+    console.log(`✅ [AIModeSelector] Confirm clicked with mode: ${selectedMode}`);
     onConfirm(selectedMode);
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-slate-900 p-6 sm:p-8 rounded-2xl sm:rounded-[2rem] border border-indigo-500/30 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-6 text-white flex items-center gap-2"><Bot size={20} /> AI Mode Selection</h2>
 
@@ -315,7 +316,10 @@ const AIModeSelector = ({ aiMode, onClose, onConfirm }) => {
 
         <div className="flex gap-2">
           <button
-            onClick={onClose}
+            onClick={() => {
+              console.log(`❌ [AIModeSelector] Cancel clicked`);
+              onClose();
+            }}
             className="flex-1 py-3 bg-slate-800 text-slate-300 rounded-xl border border-white/5 hover:bg-slate-700 transition-colors text-base"
           >
             Cancel
@@ -1083,11 +1087,61 @@ const FinishTutorialButton = ({ onFinish }) => {
   );
 };
 
+// --- FINAL SCREEN WITH RESET BUTTON ---
+const FinalScreen = ({ onReset }) => {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full bg-slate-900 p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-white/10 text-center">
+        <div className="flex justify-center mb-4 sm:mb-6">
+          <CheckCircle className="text-green-400" size={isMobile ? 48 : 64} />
+        </div>
+        <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-8 text-white">
+          Experiment Completed
+        </h2>
+
+        <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-emerald-900/20 rounded-xl sm:rounded-2xl border border-emerald-500/30">
+          <div className="text-lg sm:text-xl font-bold text-emerald-300 mb-2">
+            Thank you for your participation!
+          </div>
+          <p className="text-slate-300 text-sm sm:text-base">
+            Your answers and experiment results have been successfully saved and will be used for scientific research.
+          </p>
+        </div>
+
+        <div className="text-slate-400 text-sm mb-6 sm:mb-8">
+          <p>You can close this tab. All data is already saved.</p>
+        </div>
+
+        <div className="space-y-3">
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full bg-indigo-600 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-indigo-700 transition-colors text-sm sm:text-base min-h-[44px]"
+          >
+            Close
+          </button>
+
+          <button
+            onClick={onReset}
+            className="w-full bg-rose-600/80 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-rose-700 transition-colors text-sm sm:text-base min-h-[44px] border border-rose-500/30"
+          >
+            Start new experiment
+          </button>
+        </div>
+
+        <div className="mt-6 text-xs text-slate-500">
+          <p>Resetting will clear all local data and allow you to start the experiment again.</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- MAIN APPLICATION ---
 
 export default function App() {
   const [appState, setAppState] = useState('INTRO');
-  // Initialize from session storage if available
   const [currentStageIndex, setCurrentStageIndex] = useState(() => {
     const saved = sessionStorage.getItem('shiftStage');
     return saved ? parseInt(saved) : 1;
@@ -1097,10 +1151,10 @@ export default function App() {
   const [participantId, setParticipantId] = useState('');
   const [participantParity, setParticipantParity] = useState(null);
   const [surveyQuestions, setSurveyQuestions] = useState([]);
-  const [surveyType, setSurveyType] = useState(null); // 'pre-experiment' or 'post-experiment'
+  const [surveyType, setSurveyType] = useState(null);
   const [showTutorialBriefing, setShowTutorialBriefing] = useState(false);
   const [showHtmlViewer, setShowHtmlViewer] = useState(false);
-  const [htmlViewerMode, setHtmlViewerMode] = useState('reference'); // 'tutorial' or 'reference'
+  const [htmlViewerMode, setHtmlViewerMode] = useState('reference');
 
   const [tickets, setTickets] = useState([]);
   const [kb, setKb] = useState([]);
@@ -1111,14 +1165,31 @@ export default function App() {
   const [showAIModeSelector, setShowAIModeSelector] = useState(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [aiSelectorContext, setAiSelectorContext] = useState('start'); // 'start' или 'change'
+  const [aiSelectorContext, setAiSelectorContext] = useState('start');
 
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-  // Determine if bots are active (only at stage 2 for odd participants)
   const areAgentsOnline = currentStageIndex === 2 && participantParity === 'odd';
+
+  // Debug useEffect
+  useEffect(() => {
+    console.log(`🔍 [FRONTEND] State update:`, {
+      appState,
+      currentStageIndex,
+      participantParity,
+      aiMode,
+      showAIModeSelector,
+      aiSelectorContext,
+      timeLeft
+    });
+  }, [appState, currentStageIndex, participantParity, aiMode, showAIModeSelector, aiSelectorContext, timeLeft]);
+
+  // Debug useEffect for showAIModeSelector
+  useEffect(() => {
+    console.log(`🔍 [FRONTEND] showAIModeSelector changed to: ${showAIModeSelector}, context: ${aiSelectorContext}`);
+  }, [showAIModeSelector, aiSelectorContext]);
 
   // Generate or load participant ID and determine parity
   useEffect(() => {
@@ -1141,7 +1212,6 @@ export default function App() {
         setSurveyType('pre-experiment');
       } catch (error) {
         console.error('Failed to load pre-experiment survey questions:', error);
-        // Skip to tutorial briefing if survey fails
         setShowTutorialBriefing(true);
       }
     };
@@ -1156,22 +1226,33 @@ export default function App() {
       return;
     }
 
-    // Send participant parity on initialization
+    console.log(`🔗 [FRONTEND] Initializing socket for ${participantId} (${participantParity})`);
+
     socket.emit('request:init', {
       participantId,
       participantParity
     });
 
     socket.on('init', (data) => {
+      console.log(`📥 [FRONTEND] Received init from server:`, {
+        ticketsCount: data.tickets?.length || 0,
+        agentsCount: data.agents?.length || 0,
+        currentStage: data.currentStage,
+        aiMode: data.aiMode,
+        participantParity: data.participantParity
+      });
+      
       setTickets(data.tickets || []);
       setKb(data.kbArticles || []);
       setAgents(data.agents || []);
-      if (data.aiMode) setAiMode(data.aiMode);
+      if (data.aiMode) {
+        console.log(`🤖 [FRONTEND] Setting AI mode from server: ${data.aiMode}`);
+        setAiMode(data.aiMode);
+      }
       if (data.participantParity) setParticipantParity(data.participantParity);
       
-      // CRITICAL FIX: Only update stage from server if it's equal or greater than local
-      // This prevents the server from downgrading stage 2 to 1 due to race conditions
       if (data.currentStage) {
+        console.log(`📊 [FRONTEND] Server stage: ${data.currentStage}, Local stage: ${currentStageIndex}`);
         setCurrentStageIndex(prev => Math.max(prev, data.currentStage));
       }
     });
@@ -1180,7 +1261,6 @@ export default function App() {
     socket.on('ticket:new', t => setTickets(p => [t, ...p]));
     socket.on('agents:update', setAgents);
 
-    // Listen for AI mode changes from server
     socket.on('ai:mode_changed', (data) => {
       setAiMode(data.aiMode);
       addToast('System', `AI mode changed to: ${data.aiMode === 'normal' ? 'Normal' : 'Autonomous'}`, 'info');
@@ -1271,8 +1351,6 @@ export default function App() {
         responses
       });
       setSurveyQuestions([]);
-
-      // Запускаем туториал сразу после опроса
       setShowTutorialBriefing(true);
     } catch (error) {
       console.error('Failed to submit pre-experiment survey:', error);
@@ -1290,7 +1368,6 @@ export default function App() {
         responses
       });
 
-      // After completing post-experiment survey, show final screen
       setAppState('FINAL');
     } catch (error) {
       console.error('Failed to submit post-experiment survey:', error);
@@ -1314,27 +1391,30 @@ export default function App() {
 
   const startShift = async () => {
     try {
-      console.log(`Starting shift: stage=${currentStageIndex}, parity=${participantParity}, aiMode=${aiMode}`);
+      console.log(`🔄 [FRONTEND] Starting shift: stage=${currentStageIndex}, parity=${participantParity}, current aiMode=${aiMode}`);
       
-      // Для четных участников на втором этапе всегда показываем выбор режима ИИ
+      // Для четных участников на втором этапе показываем выбор режима ИИ
       if (currentStageIndex === 2 && participantParity === 'even') {
-        console.log('Showing AI mode selector for even participant at stage 2');
+        console.log(`🎯 [FRONTEND] Showing AI mode selector for even participant at stage 2`);
+        console.log(`🔍 [FRONTEND] Conditions: stage=${currentStageIndex}, parity=${participantParity}`);
+        
         setAiSelectorContext('start');
         setShowAIModeSelector(true);
         return;
       }
 
       // Для всех остальных случаев запускаем напрямую
+      console.log(`🚀 [FRONTEND] Starting shift directly (not even participant or not stage 2)`);
       await startShiftWithMode(aiMode);
     } catch (error) {
-      console.error('Error starting shift:', error);
+      console.error('❌ Error starting shift:', error);
       addToast('System', 'Failed to start shift. Please try again.', 'error');
     }
   };
 
   const startShiftWithMode = async (selectedAiMode) => {
     try {
-      console.log(`Starting shift with stage: ${currentStageIndex}, parity: ${participantParity}, AI mode: ${selectedAiMode}, participantId: ${participantId}`);
+      console.log(`🚀 [FRONTEND] Starting shift with stage: ${currentStageIndex}, parity: ${participantParity}, AI mode: ${selectedAiMode}, participantId: ${participantId}`);
 
       const response = await axios.post(`${API_BASE_URL}/admin/start`, {
         stage: currentStageIndex,
@@ -1343,14 +1423,13 @@ export default function App() {
         participantId
       });
 
-      console.log('Admin start response:', response.data);
+      console.log('✅ [FRONTEND] Admin start response:', response.data);
 
       if (currentStageIndex !== 1) {
         const duration = SHIFT_DURATION_SEC;
         setTimeLeft(duration);
         sessionStorage.setItem('shiftEndTime', (Date.now() + duration * 1000).toString());
       } else {
-        // Tutorial has no time limit
         setTimeLeft(0);
       }
 
@@ -1366,7 +1445,7 @@ export default function App() {
         });
       }
     } catch (error) {
-      console.error('Error starting shift with mode:', error);
+      console.error('❌ [FRONTEND] Error starting shift with mode:', error);
       addToast('System', 'Failed to start shift. Please try again.', 'error');
       throw error;
     }
@@ -1387,28 +1466,15 @@ export default function App() {
   };
 
   const finishTutorial = () => {
-    // Clear tutorial data first
     setTickets([]);
     setKb([]);
-
-    // Reset timer and clear session storage
     setTimeLeft(0);
     sessionStorage.removeItem('shiftEndTime');
-    
-    // Explicitly set next stage in storage to prevent revert on reload
     sessionStorage.setItem('shiftStage', '2');
-
-    // Send event to server to update backend state
     socket.emit('tutorial:completed', { participantId });
-
-    // Force update local state immediately
     setCurrentStageIndex(2);
     setAppState('BRIEFING');
-    
-    // Ensure tutorial briefing is closed
     setShowTutorialBriefing(false);
-
-    // Navigation
     navigate('/tickets');
   };
   
@@ -1432,18 +1498,28 @@ export default function App() {
     }
   };
 
-  // Handle AI mode selection for starting stage 2
-  const handleAIModeConfirm = (selectedAiMode) => {
-    console.log('AI Mode selected:', selectedAiMode);
+  // Handle AI mode selection confirmation
+  const handleAIModeConfirm = async (selectedAiMode) => {
+    console.log(`🎯 [FRONTEND] AI Mode Confirm called with: ${selectedAiMode}, context: ${aiSelectorContext}`);
+    
+    // Обновляем локальное состояние
     setAiMode(selectedAiMode);
     setShowAIModeSelector(false);
     
     if (aiSelectorContext === 'start') {
       // Start stage 2 with selected AI mode
-      startShiftWithMode(selectedAiMode);
+      console.log(`🚀 [FRONTEND] Starting stage 2 with AI mode: ${selectedAiMode}`);
+      try {
+        await startShiftWithMode(selectedAiMode);
+      } catch (error) {
+        console.error(`❌ [FRONTEND] Failed to start stage 2:`, error);
+        addToast('System', 'Failed to start stage 2. Please try again.', 'error');
+        setAppState('BRIEFING');
+      }
     } else {
       // Change AI mode during active shift
-      handleChangeAiMode(selectedAiMode);
+      console.log(`🔄 [FRONTEND] Changing AI mode during shift to: ${selectedAiMode}`);
+      await handleChangeAiMode(selectedAiMode);
     }
   };
 
@@ -1462,55 +1538,21 @@ export default function App() {
     }
   };
 
-  // --- FINAL SCREEN WITH RESET BUTTON ---
-  const FinalScreen = ({ onReset }) => {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-
+  // Test button for debugging (remove in production)
+  const TestButton = () => {
+    if (process.env.NODE_ENV !== 'development') return null;
+    
     return (
-      <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full bg-slate-900 p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-white/10 text-center">
-          <div className="flex justify-center mb-4 sm:mb-6">
-            <CheckCircle className="text-green-400" size={isMobile ? 48 : 64} />
-          </div>
-          <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-8 text-white">
-            Experiment Completed
-          </h2>
-
-          <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-emerald-900/20 rounded-xl sm:rounded-2xl border border-emerald-500/30">
-            <div className="text-lg sm:text-xl font-bold text-emerald-300 mb-2">
-              Thank you for your participation!
-            </div>
-            <p className="text-slate-300 text-sm sm:text-base">
-              Your answers and experiment results have been successfully saved and will be used for scientific research.
-            </p>
-          </div>
-
-          <div className="text-slate-400 text-sm mb-6 sm:mb-8">
-            <p>Participant ID: <span className="font-mono text-amber-400">{participantId}</span></p>
-            <p className="mt-2">You can close this tab. All data is already saved.</p>
-          </div>
-
-          <div className="space-y-3">
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full bg-indigo-600 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-indigo-700 transition-colors text-sm sm:text-base min-h-[44px]"
-            >
-              Close
-            </button>
-
-            <button
-              onClick={onReset}
-              className="w-full bg-rose-600/80 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-rose-700 transition-colors text-sm sm:text-base min-h-[44px] border border-rose-500/30"
-            >
-              Start new experiment
-            </button>
-          </div>
-
-          <div className="mt-6 text-xs text-slate-500">
-            <p>Resetting will clear all local data and allow you to start the experiment again.</p>
-          </div>
-        </div>
-      </div>
+      <button
+        onClick={() => {
+          console.log('🛠️ [TEST] Manually opening AI Mode Selector');
+          setAiSelectorContext('test');
+          setShowAIModeSelector(true);
+        }}
+        className="fixed bottom-4 left-4 z-[9998] bg-red-500 text-white px-4 py-2 rounded-lg text-sm"
+      >
+        TEST: Open AI Selector
+      </button>
     );
   };
 
@@ -1533,12 +1575,26 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden relative">
+      {/* AI Mode Selector - ВЫСОКИЙ z-index! */}
+      {showAIModeSelector && (
+        <AIModeSelector
+          aiMode={aiMode}
+          onClose={() => {
+            console.log(`❌ [FRONTEND] AI Mode Selector closed`);
+            setShowAIModeSelector(false);
+            if (aiSelectorContext === 'start' && currentStageIndex === 2) {
+              setAppState('BRIEFING');
+            }
+          }}
+          onConfirm={handleAIModeConfirm}
+        />
+      )}
+
       {/* Tutorial Briefing Screen */}
       {showTutorialBriefing && (
         <TutorialBriefingScreen
           onContinue={async () => {
             setShowTutorialBriefing(false);
-            // Запускаем туториал сразу, без показа инструкций
             try {
               await startShiftWithMode(aiMode);
             } catch (error) {
@@ -1557,20 +1613,8 @@ export default function App() {
         />
       )}
 
-      {/* AI Mode Selector */}
-      {showAIModeSelector && (
-        <AIModeSelector
-          aiMode={aiMode}
-          onClose={() => {
-            setShowAIModeSelector(false);
-            // Если это был контекст запуска, но пользователь отменил - возвращаемся к инструктажу
-            if (aiSelectorContext === 'start' && currentStageIndex === 2) {
-              setAppState('BRIEFING');
-            }
-          }}
-          onConfirm={handleAIModeConfirm}
-        />
-      )}
+      {/* Test button for debugging */}
+      <TestButton />
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && isMobile && (
@@ -1774,7 +1818,10 @@ export default function App() {
             )}
 
             <button
-              onClick={startShift}
+              onClick={() => {
+                console.log(`🎯 [FRONTEND] Start Experiment button clicked: stage=${currentStageIndex}, parity=${participantParity}`);
+                startShift();
+              }}
               className="w-full bg-cyan-500 text-black py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-cyan-600 transition-colors text-sm sm:text-base min-h-[44px]"
             >
               {currentStageIndex === 1 ? "Start Tutorial" : "Start Experiment"}
@@ -1794,7 +1841,6 @@ export default function App() {
               setCurrentStageIndex(p => p + 1);
               setAppState('BRIEFING');
             } else {
-              // After completing stage 2, show experiment completion screen
               setAppState('EXPERIMENT_COMPLETE');
             }
           }}
