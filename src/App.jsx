@@ -1096,7 +1096,6 @@ export default function App() {
   const [showHtmlViewer, setShowHtmlViewer] = useState(false);
   const [htmlViewerMode, setHtmlViewerMode] = useState('reference'); // 'tutorial' or 'reference'
 
-
   const [tickets, setTickets] = useState([]);
   const [kb, setKb] = useState([]);
   const [agents, setAgents] = useState([]);
@@ -1106,6 +1105,7 @@ export default function App() {
   const [showAIModeSelector, setShowAIModeSelector] = useState(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [aiSelectorContext, setAiSelectorContext] = useState('start'); // 'start' или 'change'
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -1113,7 +1113,6 @@ export default function App() {
 
   // Determine if bots are active (only at stage 2 for odd participants)
   const areAgentsOnline = currentStageIndex === 2 && participantParity === 'odd';
-
 
   // Generate or load participant ID and determine parity
   useEffect(() => {
@@ -1131,7 +1130,7 @@ export default function App() {
     // Load pre-experiment survey questions
     const loadPreExperimentSurvey = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/survey/pre-experiment');
+        const response = await axios.get(`${API_BASE_URL}/api/survey/pre-experiment`);
         setSurveyQuestions(response.data.questions);
         setSurveyType('pre-experiment');
       } catch (error) {
@@ -1310,12 +1309,17 @@ export default function App() {
 
   const startShift = async () => {
     try {
-      // For stage 2: if even participant - show AI mode selection
+      console.log(`Starting shift: stage=${currentStageIndex}, parity=${participantParity}, aiMode=${aiMode}`);
+      
+      // Для четных участников на втором этапе всегда показываем выбор режима ИИ
       if (currentStageIndex === 2 && participantParity === 'even') {
+        console.log('Showing AI mode selector for even participant at stage 2');
+        setAiSelectorContext('start'); // Устанавливаем контекст запуска
         setShowAIModeSelector(true);
         return;
       }
 
+      // Для всех остальных случаев запускаем напрямую
       await startShiftWithMode(aiMode);
     } catch (error) {
       console.error('Error starting shift:', error);
@@ -1533,6 +1537,31 @@ export default function App() {
         />
       )}
 
+      {/* AI Mode Selector */}
+      {showAIModeSelector && (
+        <AIModeSelector
+          aiMode={aiMode}
+          setAiMode={setAiMode}
+          onClose={() => {
+            setShowAIModeSelector(false);
+            // Если это был контекст запуска, но пользователь отменил - возвращаемся к инструктажу
+            if (aiSelectorContext === 'start' && currentStageIndex === 2) {
+              setAppState('BRIEFING');
+            }
+          }}
+          onConfirm={() => {
+            if (aiSelectorContext === 'start') {
+              // Запуск второго этапа с выбранным режимом ИИ
+              startShiftWithMode(aiMode);
+            } else {
+              // Изменение режима во время активной смены
+              handleChangeAiMode(aiMode);
+            }
+            setShowAIModeSelector(false);
+          }}
+        />
+      )}
+
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && isMobile && (
         <div className="md:hidden fixed inset-0 z-50 bg-black/90 backdrop-blur">
@@ -1744,24 +1773,6 @@ export default function App() {
         </div>
       )}
 
-      {/* AI mode selection for even participants at stage 2 */}
-      {showAIModeSelector && (
-        <AIModeSelector
-          aiMode={aiMode}
-          setAiMode={setAiMode}
-          onClose={() => setShowAIModeSelector(false)}
-          onConfirm={async () => {
-            setShowAIModeSelector(false);
-            try {
-              await startShiftWithMode(aiMode);
-            } catch (error) {
-              console.error('Error starting shift after AI mode selection:', error);
-              addToast('System', 'Failed to start shift. Please try again.', 'error');
-            }
-          }}
-        />
-      )}
-
       {/* Summary window after each stage */}
       {appState === 'SUMMARY' && (
         <SummaryScreen
@@ -1833,7 +1844,10 @@ export default function App() {
             {/* Кнопка смены режима ИИ для четных участников на втором этапе (во время активной смены) */}
             {appState === 'ACTIVE' && currentStageIndex === 2 && participantParity === 'even' && (
               <button
-                onClick={() => setShowAIModeSelector(true)}
+                onClick={() => {
+                  setAiSelectorContext('change');
+                  setShowAIModeSelector(true);
+                }}
                 className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600/30 border border-indigo-500/50 text-indigo-100 rounded-xl hover:bg-indigo-600 transition-colors text-sm"
               >
                 <Bot size={14} />
