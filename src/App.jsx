@@ -1091,7 +1091,6 @@ export default function App() {
   const [showHtmlViewer, setShowHtmlViewer] = useState(false);
   const [htmlViewerMode, setHtmlViewerMode] = useState('reference'); // 'tutorial' or 'reference'
 
-  const [participantCompleted, setParticipantCompleted] = useState(false);
 
   const [tickets, setTickets] = useState([]);
   const [kb, setKb] = useState([]);
@@ -1110,36 +1109,10 @@ export default function App() {
   // Determine if bots are active (only at stage 2 for odd participants)
   const areAgentsOnline = currentStageIndex === 2 && participantParity === 'odd';
 
-  // Determine if the experiment is finished
-  useEffect(() => {
-    const savedParticipantId = localStorage.getItem('participantId');
-    if (!savedParticipantId) {
-      return;
-    }
-
-    const completed = localStorage.getItem(`experimentCompleted_${savedParticipantId}`);
-    if (completed === 'true') {
-      console.log('Participant already completed experiment:', savedParticipantId);
-      setParticipantId(savedParticipantId);
-      setParticipantCompleted(true);
-      setAppState('FINAL');
-      return;
-    }
-  }, []);
 
   // Generate or load participant ID and determine parity
   useEffect(() => {
-    // Если участник уже завершил эксперимент, не выполняем инициализацию
-    if (participantCompleted) {
-      return;
-    }
-
-    let id = localStorage.getItem('participantId');
-    if (!id) {
-      id = 'P_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('participantId', id);
-    }
-
+    const id = 'P_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     setParticipantId(id);
 
     // Determine participant parity by last digit of ID
@@ -1147,7 +1120,6 @@ export default function App() {
     const isEven = !isNaN(lastChar) ? parseInt(lastChar) % 2 === 0 : Math.random() > 0.5;
     const parity = isEven ? 'even' : 'odd';
     setParticipantParity(parity);
-    localStorage.setItem('participantParity', parity);
 
     console.log(`Participant ID: ${id}, Parity: ${parity}`);
 
@@ -1167,12 +1139,9 @@ export default function App() {
     if (appState === 'INTRO') {
       loadPreExperimentSurvey();
     }
-  }, [appState, participantCompleted]);
+  }, [appState]);
 
   useEffect(() => {
-    if (participantCompleted) {
-      return;
-    }
 
     if (!participantId || !participantParity) {
       return;
@@ -1238,17 +1207,12 @@ export default function App() {
       socket.off('ai:autonomous_action');
       socket.off('client:notification');
     };
-  }, [participantCompleted, participantId, participantParity]);
+  }, [participantId, participantParity]);
 
   // LocalStorage logic
   useEffect(() => {
-    const savedEndTime = localStorage.getItem('shiftEndTime');
-    const savedStage = localStorage.getItem('shiftStage');
-    const savedParity = localStorage.getItem('participantParity');
-
-    if (savedParity) {
-      setParticipantParity(savedParity);
-    }
+    const savedEndTime = sessionStorage.getItem('shiftEndTime');
+    const savedStage = sessionStorage.getItem('shiftStage');
 
     if (savedEndTime && savedStage) {
       const remaining = Math.floor((parseInt(savedEndTime) - Date.now()) / 1000);
@@ -1312,8 +1276,6 @@ export default function App() {
         responses
       });
 
-      localStorage.setItem(`experimentCompleted_${participantId}`, 'true');
-
       // After completing post-experiment survey, show final screen
       setAppState('FINAL');
     } catch (error) {
@@ -1367,14 +1329,14 @@ export default function App() {
       if (currentStageIndex !== 1) {
         const duration = SHIFT_DURATION_SEC;
         setTimeLeft(duration);
-        localStorage.setItem('shiftEndTime', (Date.now() + duration * 1000).toString());
+        sessionStorage.setItem('shiftEndTime', (Date.now() + duration * 1000).toString());
       } else {
         // Tutorial has no time limit
         setTimeLeft(0);
       }
 
       setAppState('ACTIVE');
-      localStorage.setItem('shiftStage', currentStageIndex.toString());
+      sessionStorage.setItem('shiftStage', currentStageIndex.toString());
 
       // Welcome messages only at stage 2 for odd participants
       if (currentStageIndex === 2 && participantParity === 'odd') {
@@ -1393,8 +1355,8 @@ export default function App() {
 
   const finishShift = () => {
     setAppState('SUMMARY');
-    localStorage.removeItem('shiftEndTime');
-    localStorage.removeItem('shiftStage');
+    sessionStorage.removeItem('shiftEndTime');
+    sessionStorage.removeItem('shiftStage');
     setTimeLeft(0);
   };
 
@@ -1490,7 +1452,7 @@ export default function App() {
               onClick={onReset}
               className="w-full bg-rose-600/80 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-rose-700 transition-colors text-sm sm:text-base min-h-[44px] border border-rose-500/30"
             >
-              Reset Experiment Data
+              Start new experiment
             </button>
           </div>
 
@@ -1518,22 +1480,6 @@ export default function App() {
       </div>
     </div>
   );
-
-  if (participantCompleted && appState === 'FINAL') {
-    return (
-      <FinalScreen
-        onReset={() => {
-          localStorage.removeItem(`experimentCompleted_${participantId}`);
-          localStorage.removeItem('participantId');
-          localStorage.removeItem('participantParity');
-          localStorage.removeItem('shiftEndTime');
-          localStorage.removeItem('shiftStage');
-
-          window.location.reload();
-        }}
-      />
-    );
-  }
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden relative">
@@ -1814,14 +1760,8 @@ export default function App() {
       {appState === 'FINAL' && (
         <FinalScreen
           onReset={() => {
-            // Очищаем все данные этого участника из localStorage
-            localStorage.removeItem(`experimentCompleted_${participantId}`);
-            localStorage.removeItem('participantId');
-            localStorage.removeItem('participantParity');
-            localStorage.removeItem('shiftEndTime');
-            localStorage.removeItem('shiftStage');
-
-            // Перезагружаем страницу для нового эксперимента
+            sessionStorage.clear();
+            localStorage.clear();
             window.location.reload();
           }}
         />
