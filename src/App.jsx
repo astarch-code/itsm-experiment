@@ -1152,12 +1152,20 @@ export default function App() {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Используем ref для хранения текущей стадии, чтобы иметь доступ к актуальному значению внутри замыканий
+  const currentStageRef = useRef(1);
+
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   // Determine if bots are active (only at stage 2 for odd participants)
   const areAgentsOnline = currentStageIndex === 2 && participantParity === 'odd';
+
+  // Синхронизация ref с state
+  useEffect(() => {
+    currentStageRef.current = currentStageIndex;
+  }, [currentStageIndex]);
 
   // Восстановление состояния при загрузке
   useEffect(() => {
@@ -1232,7 +1240,16 @@ export default function App() {
       setAgents(data.agents || []);
       if (data.aiMode) setAiMode(data.aiMode);
       if (data.participantParity) setParticipantParity(data.participantParity);
-      if (data.currentStage) setCurrentStageIndex(data.currentStage);
+      
+      // Critical check: don't revert to stage 1 if we are already at stage 2 locally
+      if (data.currentStage) {
+        // If the incoming stage is greater than or equal to what we have, accept it
+        if (data.currentStage >= currentStageRef.current) {
+          setCurrentStageIndex(data.currentStage);
+        } else {
+          console.warn(`⚠️ Ignoring outdated stage update from server. Server: ${data.currentStage}, Local: ${currentStageRef.current}`);
+        }
+      }
     });
 
     socket.on('tickets:update', setTickets);
@@ -1269,15 +1286,8 @@ export default function App() {
       addToast('Client', data.message, data.type);
     });
 
-    socket.on('tutorial:completed:ack', (data) => {
-      console.log('✅ Tutorial completion acknowledged by server:', data);
-      if (data.success) {
-        // Обновляем состояние, если нужно
-        if (data.currentStage) {
-          setCurrentStageIndex(data.currentStage);
-        }
-      }
-    });
+    // Note: removed tutorial:completed:ack listener from here to avoid duplication
+    // and rely on the local handler in finishTutorial or the direct transition logic
 
     return () => {
       socket.off('init');
@@ -1349,8 +1359,15 @@ export default function App() {
 
   const startShift = async () => {
     try {
+      // Ensure we are using the currentStageIndex from state, but default to 2 if we think we are past tutorial
+      // This protects against a case where UI shows Stage 2 but variable is 1
+      let stageToStart = currentStageIndex;
+      if (appState === 'BRIEFING' && SCENARIOS[2] && SCENARIOS[currentStageIndex]?.title === SCENARIOS[2].title) {
+        stageToStart = 2;
+      }
+
       // For stage 2: if even participant - show AI mode selection
-      if (currentStageIndex === 2 && participantParity === 'even') {
+      if (stageToStart === 2 && participantParity === 'even') {
         setShowAIModeSelector(true);
         return;
       }
@@ -1364,18 +1381,24 @@ export default function App() {
 
   const startShiftWithMode = async (selectedAiMode) => {
     try {
-      console.log(`Starting shift with stage: ${currentStageIndex}, parity: ${participantParity}, AI mode: ${selectedAiMode}, participantId: ${participantId}`);
+      // Ensure we send stage 2 if we are in the briefing for stage 2
+      let stageToStart = currentStageIndex;
+      if (currentStageRef.current === 2) {
+        stageToStart = 2;
+      }
+      
+      console.log(`Starting shift with stage: ${stageToStart}, parity: ${participantParity}, AI mode: ${selectedAiMode}, participantId: ${participantId}`);
 
       const response = await axios.post(`${API_BASE_URL}/admin/start`, {
-        stage: currentStageIndex,
-        aiMode: currentStageIndex === 2 && participantParity === 'even' ? selectedAiMode : 'normal',
+        stage: stageToStart,
+        aiMode: stageToStart === 2 && participantParity === 'even' ? selectedAiMode : 'normal',
         participantParity,
         participantId
       });
 
       console.log('Admin start response:', response.data);
 
-      if (currentStageIndex !== 1) {
+      if (stageToStart !== 1) {
         const duration = SHIFT_DURATION_SEC;
         setTimeLeft(duration);
       } else {
@@ -1386,7 +1409,7 @@ export default function App() {
       setAppState('ACTIVE');
 
       // Welcome messages only at stage 2 for odd participants
-      if (currentStageIndex === 2 && participantParity === 'odd') {
+      if (stageToStart === 2 && participantParity === 'odd') {
         agents.forEach(agent => {
           if (agent.trust > 0.7) {
             setTimeout(() => addToast(agent.name, agent.greeting, "success"), 2000 + Math.random() * 2000);
@@ -1426,27 +1449,10 @@ export default function App() {
         participantParity
       });
 
-      // Ждем подтверждения от сервера
-      return new Promise((resolve) => {
-        const timeout = setTimeout(() => {
-          console.log('⚠️ Server acknowledgment timeout, proceeding anyway...');
-          proceedToStage2();
-          resolve();
-        }, 2000);
-
-        // Обработчик подтверждения от сервера
-        const ackHandler = (data) => {
-          if (data.success) {
-            console.log('✅ Server acknowledged tutorial completion');
-            clearTimeout(timeout);
-            socket.off('tutorial:completed:ack', ackHandler);
-            proceedToStage2();
-            resolve();
-          }
-        };
-
-        socket.on('tutorial:completed:ack', ackHandler);
-      });
+      // Переходим к следующему этапу немедленно
+      // Мы не ждем ACK, потому что сервер может быть занят, а UI должен обновиться
+      // Сервер сам обновит свое состояние при получении события
+      proceedToStage2();
 
     } catch (error) {
       console.error('Error finishing tutorial:', error);
@@ -1457,24 +1463,22 @@ export default function App() {
 
   // Вспомогательная функция для перехода к этапу 2
   const proceedToStage2 = () => {
-    // Небольшая задержка для гарантии синхронизации состояний
-    setTimeout(() => {
-      console.log('🚀 Proceeding to stage 2...');
+    console.log('🚀 Proceeding to stage 2...');
 
-      // Очистка данных туториала на клиенте
-      setTickets([]);
-      setKb([]);
+    // Очистка данных туториала на клиенте немедленно
+    setTickets([]);
+    setKb([]);
+    
+    // Принудительно устанавливаем стадию 2
+    setCurrentStageIndex(2);
+    currentStageRef.current = 2; // Обновляем ref синхронно для слушателей сокетов
+    setAppState('BRIEFING');
 
-      // Переход на следующую стадию (эксперимент)
-      setCurrentStageIndex(2);
-      setAppState('BRIEFING');
+    // Очищаем sessionStorage от временных данных
+    sessionStorage.removeItem('tutorialCompleted');
+    sessionStorage.removeItem('currentStage');
 
-      // Очищаем sessionStorage от временных данных
-      sessionStorage.removeItem('tutorialCompleted');
-      sessionStorage.removeItem('currentStage');
-
-      console.log('✅ Successfully transitioned to stage 2');
-    }, 500); // Задержка 500ms для синхронизации
+    console.log('✅ Successfully transitioned to stage 2 UI');
   };
 
   // Handle AI mode change during experiment
