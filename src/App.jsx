@@ -501,6 +501,15 @@ const TicketsPage = ({ tickets, socket, navigate, currentStage }) => {
     t.status.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Функция для изменения статуса тикета
+  const handleStatusChange = (ticketId, newStatus) => {
+    console.log(`🔄 Changing ticket ${ticketId} status to ${newStatus}`);
+    socket.emit('ticket:status:update', { 
+      ticketId: ticketId, 
+      newStatus: newStatus 
+    });
+  };
+
   return (
     <div className="p-4 sm:p-6 h-full flex flex-col pb-20 md:pb-0">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
@@ -570,15 +579,15 @@ const TicketsPage = ({ tickets, socket, navigate, currentStage }) => {
                 <div onClick={(e) => e.stopPropagation()}>
                   <select
                     value={t.status}
-                    onChange={(e) => socket.emit('ticket:status:update', { ticketId: t.id, newStatus: e.target.value })}
-                    className={`text-[10px] font-bold uppercase p-1.5 rounded-lg border bg-slate-900 outline-none min-h-[32px] 
+                    onChange={(e) => handleStatusChange(t.id, e.target.value)}
+                    className={`text-[10px] font-bold uppercase p-1.5 rounded-lg border bg-slate-900 outline-none min-h-[32px] cursor-pointer
                       ${t.isCritical
-                        ? 'border-red-500 text-red-300 bg-red-900/40'
+                        ? 'border-red-500 text-red-300 bg-red-900/40 hover:bg-red-800/40'
                         : t.isTutorial
-                          ? 'border-emerald-500 text-emerald-300 bg-emerald-900/20'
+                          ? 'border-emerald-500 text-emerald-300 bg-emerald-900/20 hover:bg-emerald-800/20'
                           : t.status === 'in Progress'
-                            ? 'border-cyan-500 text-cyan-400'
-                            : 'border-slate-700 text-slate-500'}`}
+                            ? 'border-cyan-500 text-cyan-400 hover:bg-cyan-900/20'
+                            : 'border-slate-700 text-slate-500 hover:bg-slate-700/40'}`}
                   >
                     <option value="not assigned">Free</option>
                     <option value="in Progress">In Progress</option>
@@ -633,6 +642,26 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
     console.log(`👥 Delegating ticket ${ticket.id} to bot ${botId}`);
     socket.emit('bot:delegate', { ticketId: ticket.id, botId });
     setShowDelegationPanel(false);
+  };
+
+  // Функция для изменения статуса тикета
+  const handleStatusChange = (e) => {
+    const newStatus = e.target.value;
+    console.log(`🔄 Changing ticket ${ticket.id} status from ${ticket.status} to ${newStatus}`);
+    
+    // Отправляем событие на сервер
+    socket.emit('ticket:status:update', { 
+      ticketId: ticket.id, 
+      newStatus: newStatus 
+    });
+    
+    // Немедленно обновляем локальное состояние для лучшего UX
+    ticket.status = newStatus;
+    if (newStatus === 'in Progress') {
+      ticket.assignedTo = 'participant';
+    } else if (newStatus === 'not assigned') {
+      ticket.assignedTo = null;
+    }
   };
 
   return (
@@ -843,13 +872,15 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                   <div className="grid grid-cols-1 gap-3">
                     {agents.map(a => {
                       const isOnline = a.status === 'online';
+                      const canDelegate = areAgentsOnline && isMyTicket && isOnline;
+                      
                       return (
                         <button
                           key={a.id}
-                          disabled={!areAgentsOnline || !isMyTicket || !isOnline}
+                          disabled={!canDelegate}
                           onClick={() => handleDelegate(a.id)}
                           className={`flex items-center gap-3 p-4 rounded-xl border text-sm transition-all min-h-[60px] 
-                          ${areAgentsOnline && isMyTicket && isOnline
+                          ${canDelegate
                               ? ticket.isCritical
                                 ? 'bg-gradient-to-r from-amber-600/30 to-red-600/20 border-amber-500/40 text-white hover:from-amber-700 hover:to-red-600'
                                 : 'bg-indigo-600/20 border-indigo-500/30 text-white hover:bg-indigo-600'
@@ -863,6 +894,11 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                             <span className={`text-xs ${isOnline ? 'text-green-500' : 'text-amber-500'}`}>
                               {isOnline ? 'Online • Available' : 'Away • Busy'}
                             </span>
+                            {!canDelegate && (
+                              <span className="text-[10px] text-slate-400 mt-1">
+                                {!areAgentsOnline ? 'Team not available' : !isMyTicket ? 'Assign ticket first' : !isOnline ? 'Colleague away' : ''}
+                              </span>
+                            )}
                           </div>
                         </button>
                       )
@@ -879,13 +915,15 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                 <div className="grid grid-cols-1 gap-2">
                   {agents.map(a => {
                     const isOnline = a.status === 'online';
+                    const canDelegate = areAgentsOnline && isMyTicket && isOnline;
+                    
                     return (
                       <button
                         key={a.id}
-                        disabled={!areAgentsOnline || !isMyTicket || !isOnline}
+                        disabled={!canDelegate}
                         onClick={() => handleDelegate(a.id)}
                         className={`flex items-center gap-2 p-3 rounded-xl border text-[10px] font-bold transition-all min-h-[44px]
-                        ${areAgentsOnline && isMyTicket && isOnline
+                        ${canDelegate
                             ? ticket.isCritical
                               ? 'bg-gradient-to-r from-amber-600/30 to-red-600/20 border-amber-500/40 text-white hover:from-amber-700 hover:to-red-600'
                               : 'bg-indigo-600/20 border-indigo-500/30 text-white hover:bg-indigo-600'
@@ -896,11 +934,18 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                         </div>
                         <div className="flex flex-col items-start">
                           <span>{a.name}</span>
-                          {!isOnline && <span className="text-[8px] text-amber-500 uppercase">Away</span>}
+                          <span className={`text-[8px] ${isOnline ? 'text-green-500' : 'text-amber-500'}`}>
+                            {isOnline ? 'Online' : 'Away'}
+                          </span>
                         </div>
                       </button>
                     )
                   })}
+                </div>
+                <div className="mt-4 text-xs text-slate-500">
+                  <p>• Delegation available only when ticket is assigned to you</p>
+                  <p>• Colleagues must be online (green status)</p>
+                  <p>• Critical tickets have shorter response time</p>
                 </div>
               </div>
             </aside>
