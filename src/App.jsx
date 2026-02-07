@@ -1159,6 +1159,30 @@ export default function App() {
   // Determine if bots are active (only at stage 2 for odd participants)
   const areAgentsOnline = currentStageIndex === 2 && participantParity === 'odd';
 
+  // Восстановление состояния при загрузке
+  useEffect(() => {
+    // Проверяем, был ли завершен туториал в этой сессии
+    const tutorialCompleted = sessionStorage.getItem('tutorialCompleted');
+    const savedStage = sessionStorage.getItem('currentStage');
+    const savedParticipantId = sessionStorage.getItem('participantId');
+    const savedParity = sessionStorage.getItem('participantParity');
+
+    if (tutorialCompleted === 'true' && savedStage === '2' &&
+      savedParticipantId && savedParity) {
+      console.log('🔄 Restoring previous tutorial state...');
+
+      // Восстанавливаем состояние из sessionStorage
+      setParticipantId(savedParticipantId);
+      setParticipantParity(savedParity);
+      setCurrentStageIndex(2);
+      setAppState('BRIEFING');
+
+      // Очищаем временные данные
+      sessionStorage.removeItem('tutorialCompleted');
+      sessionStorage.removeItem('currentStage');
+    }
+  }, []);
+
   // Generate participant ID and determine parity on initial load
   useEffect(() => {
     // Генерируем новый ID при каждом запуске приложения
@@ -1243,6 +1267,16 @@ export default function App() {
 
     socket.on('client:notification', (data) => {
       addToast('Client', data.message, data.type);
+    });
+
+    socket.on('tutorial:completed:ack', (data) => {
+      console.log('✅ Tutorial completion acknowledged by server:', data);
+      if (data.success) {
+        // Обновляем состояние, если нужно
+        if (data.currentStage) {
+          setCurrentStageIndex(data.currentStage);
+        }
+      }
     });
 
     return () => {
@@ -1376,14 +1410,71 @@ export default function App() {
     setAppState('SUMMARY');
   };
 
-  const finishTutorial = () => {
-    // Clear tutorial data first
-    setTickets([]);
-    setKb([]);
+  const finishTutorial = async () => {
+    try {
+      console.log('🎓 Finishing tutorial...');
 
-    // Move to next stage (experiment)
-    setCurrentStageIndex(2);
-    setAppState('BRIEFING');
+      // Сохраняем состояние в sessionStorage
+      sessionStorage.setItem('tutorialCompleted', 'true');
+      sessionStorage.setItem('currentStage', '2');
+      sessionStorage.setItem('participantId', participantId);
+      sessionStorage.setItem('participantParity', participantParity);
+
+      // Отправляем событие на сервер о завершении туториала
+      socket.emit('tutorial:completed', {
+        participantId,
+        participantParity
+      });
+
+      // Ждем подтверждения от сервера
+      return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          console.log('⚠️ Server acknowledgment timeout, proceeding anyway...');
+          proceedToStage2();
+          resolve();
+        }, 2000);
+
+        // Обработчик подтверждения от сервера
+        const ackHandler = (data) => {
+          if (data.success) {
+            console.log('✅ Server acknowledged tutorial completion');
+            clearTimeout(timeout);
+            socket.off('tutorial:completed:ack', ackHandler);
+            proceedToStage2();
+            resolve();
+          }
+        };
+
+        socket.on('tutorial:completed:ack', ackHandler);
+      });
+
+    } catch (error) {
+      console.error('Error finishing tutorial:', error);
+      // В случае ошибки все равно переходим к следующему этапу
+      proceedToStage2();
+    }
+  };
+
+  // Вспомогательная функция для перехода к этапу 2
+  const proceedToStage2 = () => {
+    // Небольшая задержка для гарантии синхронизации состояний
+    setTimeout(() => {
+      console.log('🚀 Proceeding to stage 2...');
+
+      // Очистка данных туториала на клиенте
+      setTickets([]);
+      setKb([]);
+
+      // Переход на следующую стадию (эксперимент)
+      setCurrentStageIndex(2);
+      setAppState('BRIEFING');
+
+      // Очищаем sessionStorage от временных данных
+      sessionStorage.removeItem('tutorialCompleted');
+      sessionStorage.removeItem('currentStage');
+
+      console.log('✅ Successfully transitioned to stage 2');
+    }, 500); // Задержка 500ms для синхронизации
   };
 
   // Handle AI mode change during experiment
