@@ -277,7 +277,13 @@ const TicketTimer = ({ ticket }) => {
 };
 
 // --- AI MODE SELECTOR ---
-const AIModeSelector = ({ aiMode, setAiMode, onClose, onConfirm }) => {
+const AIModeSelector = ({ aiMode, onClose, onConfirm }) => {
+  const [selectedMode, setSelectedMode] = useState(aiMode);
+
+  const handleConfirm = () => {
+    onConfirm(selectedMode);
+  };
+
   return (
     <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-slate-900 p-6 sm:p-8 rounded-2xl sm:rounded-[2rem] border border-indigo-500/30 max-h-[90vh] overflow-y-auto">
@@ -289,16 +295,16 @@ const AIModeSelector = ({ aiMode, setAiMode, onClose, onConfirm }) => {
 
             <div className="grid grid-cols-1 gap-3">
               <button
-                onClick={() => setAiMode('normal')}
-                className={`p-4 rounded-xl border text-left transition-all ${aiMode === 'normal' ? 'bg-indigo-600/30 border-indigo-500 text-white' : 'bg-slate-800/50 border-white/5 text-slate-400 hover:border-indigo-500/30'}`}
+                onClick={() => setSelectedMode('normal')}
+                className={`p-4 rounded-xl border text-left transition-all ${selectedMode === 'normal' ? 'bg-indigo-600/30 border-indigo-500 text-white' : 'bg-slate-800/50 border-white/5 text-slate-400 hover:border-indigo-500/30'}`}
               >
                 <div className="font-bold mb-1 text-base">Normal Mode</div>
                 <div className="text-sm text-slate-300">AI gives advice on request. You solve tickets yourself, AI helps with solution search.</div>
               </button>
 
               <button
-                onClick={() => setAiMode('autonomous')}
-                className={`p-4 rounded-xl border text-left transition-all ${aiMode === 'autonomous' ? 'bg-indigo-600/30 border-indigo-500 text-white' : 'bg-slate-800/50 border-white/5 text-slate-400 hover:border-indigo-500/30'}`}
+                onClick={() => setSelectedMode('autonomous')}
+                className={`p-4 rounded-xl border text-left transition-all ${selectedMode === 'autonomous' ? 'bg-indigo-600/30 border-indigo-500 text-white' : 'bg-slate-800/50 border-white/5 text-slate-400 hover:border-indigo-500/30'}`}
               >
                 <div className="font-bold mb-1 text-base">Autonomous Mode</div>
                 <div className="text-sm text-slate-300">AI solves tickets independently. May skip some tickets or solve them incorrectly.</div>
@@ -315,7 +321,7 @@ const AIModeSelector = ({ aiMode, setAiMode, onClose, onConfirm }) => {
             Cancel
           </button>
           <button
-            onClick={onConfirm}
+            onClick={handleConfirm}
             className="flex-1 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-base"
           >
             Confirm
@@ -1146,7 +1152,6 @@ export default function App() {
   }, [appState]);
 
   useEffect(() => {
-
     if (!participantId || !participantParity) {
       return;
     }
@@ -1314,7 +1319,7 @@ export default function App() {
       // Для четных участников на втором этапе всегда показываем выбор режима ИИ
       if (currentStageIndex === 2 && participantParity === 'even') {
         console.log('Showing AI mode selector for even participant at stage 2');
-        setAiSelectorContext('start'); // Устанавливаем контекст запуска
+        setAiSelectorContext('start');
         setShowAIModeSelector(true);
         return;
       }
@@ -1417,7 +1422,7 @@ export default function App() {
       });
 
       if (response.data.success) {
-        setAiMode(response.data.aiMode);
+        setAiMode(newAiMode);
         setShowAIModeSelector(false);
         addToast('System', `AI mode changed to ${newAiMode === 'normal' ? 'Normal' : 'Autonomous'}`, 'success');
       }
@@ -1427,12 +1432,27 @@ export default function App() {
     }
   };
 
+  // Handle AI mode selection for starting stage 2
+  const handleAIModeConfirm = (selectedAiMode) => {
+    console.log('AI Mode selected:', selectedAiMode);
+    setAiMode(selectedAiMode);
+    setShowAIModeSelector(false);
+    
+    if (aiSelectorContext === 'start') {
+      // Start stage 2 with selected AI mode
+      startShiftWithMode(selectedAiMode);
+    } else {
+      // Change AI mode during active shift
+      handleChangeAiMode(selectedAiMode);
+    }
+  };
+
   // Handle HTML viewer close
   const handleHtmlViewerClose = () => {
     setShowHtmlViewer(false);
   };
 
-  // Handle HTML viewer start tutorial - запускает туториал без показа инструкций
+  // Handle HTML viewer start tutorial
   const handleHtmlViewerStartTutorial = async () => {
     try {
       setShowHtmlViewer(false);
@@ -1541,7 +1561,6 @@ export default function App() {
       {showAIModeSelector && (
         <AIModeSelector
           aiMode={aiMode}
-          setAiMode={setAiMode}
           onClose={() => {
             setShowAIModeSelector(false);
             // Если это был контекст запуска, но пользователь отменил - возвращаемся к инструктажу
@@ -1549,16 +1568,7 @@ export default function App() {
               setAppState('BRIEFING');
             }
           }}
-          onConfirm={() => {
-            if (aiSelectorContext === 'start') {
-              // Запуск второго этапа с выбранным режимом ИИ
-              startShiftWithMode(aiMode);
-            } else {
-              // Изменение режима во время активной смены
-              handleChangeAiMode(aiMode);
-            }
-            setShowAIModeSelector(false);
-          }}
+          onConfirm={handleAIModeConfirm}
         />
       )}
 
