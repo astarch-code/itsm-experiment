@@ -1256,6 +1256,17 @@ export default function App() {
     socket.on('ticket:new', t => setTickets(p => [t, ...p]));
     socket.on('agents:update', setAgents);
 
+    // Listen for timer updates from server
+    socket.on('shift:timer:update', (data) => {
+      console.log('⏱️ Received timer update from server:', data.timeLeft);
+      setTimeLeft(data.timeLeft);
+    });
+
+    socket.on('shift:timeout', () => {
+      console.log('⏰ Timeout received from server');
+      forceFinishShift();
+    });
+
     // Listen for AI mode changes from server
     socket.on('ai:mode_changed', (data) => {
       setAiMode(data.aiMode);
@@ -1286,14 +1297,13 @@ export default function App() {
       addToast('Client', data.message, data.type);
     });
 
-    // Note: removed tutorial:completed:ack listener from here to avoid duplication
-    // and rely on the local handler in finishTutorial or the direct transition logic
-
     return () => {
       socket.off('init');
       socket.off('tickets:update');
       socket.off('ticket:new');
       socket.off('agents:update');
+      socket.off('shift:timer:update');
+      socket.off('shift:timeout');
       socket.off('ai:mode_changed');
       socket.off('bot:notification');
       socket.off('ai:notification');
@@ -1410,11 +1420,13 @@ export default function App() {
 
       // Welcome messages only at stage 2 for odd participants
       if (stageToStart === 2 && participantParity === 'odd') {
-        agents.forEach(agent => {
-          if (agent.trust > 0.7) {
-            setTimeout(() => addToast(agent.name, agent.greeting, "success"), 2000 + Math.random() * 2000);
-          }
-        });
+        setTimeout(() => {
+          agents.forEach(agent => {
+            if (agent.trust > 0.7) {
+              addToast(agent.name, agent.greeting, "success");
+            }
+          });
+        }, 2000);
       }
     } catch (error) {
       console.error('Error starting shift with mode:', error);
