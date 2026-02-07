@@ -1081,7 +1081,12 @@ const FinishTutorialButton = ({ onFinish }) => {
 
 export default function App() {
   const [appState, setAppState] = useState('INTRO');
-  const [currentStageIndex, setCurrentStageIndex] = useState(1);
+  // Initialize from session storage if available
+  const [currentStageIndex, setCurrentStageIndex] = useState(() => {
+    const saved = sessionStorage.getItem('shiftStage');
+    return saved ? parseInt(saved) : 1;
+  });
+  
   const [timeLeft, setTimeLeft] = useState(0);
   const [participantId, setParticipantId] = useState('');
   const [participantParity, setParticipantParity] = useState(null);
@@ -1159,7 +1164,12 @@ export default function App() {
       setAgents(data.agents || []);
       if (data.aiMode) setAiMode(data.aiMode);
       if (data.participantParity) setParticipantParity(data.participantParity);
-      if (data.currentStage) setCurrentStageIndex(data.currentStage);
+      
+      // CRITICAL FIX: Only update stage from server if it's equal or greater than local
+      // This prevents the server from downgrading stage 2 to 1 due to race conditions
+      if (data.currentStage) {
+        setCurrentStageIndex(prev => Math.max(prev, data.currentStage));
+      }
     });
 
     socket.on('tickets:update', setTickets);
