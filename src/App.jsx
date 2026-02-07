@@ -1372,11 +1372,21 @@ export default function App() {
     setTickets([]);
     setKb([]);
 
+    // Reset timer and clear session storage
+    setTimeLeft(0);
+    sessionStorage.removeItem('shiftEndTime');
+    sessionStorage.removeItem('shiftStage');
+
+    // Отправляем событие на сервер о завершении туториала
+    socket.emit('tutorial:completed', { participantId });
+
     // Move to next stage (experiment)
     setCurrentStageIndex(2);
     setAppState('BRIEFING');
-  };
 
+    // Навигация на главную страницу
+    navigate('/tickets');
+  };
   // Handle AI mode change during experiment
   const handleChangeAiMode = async (newAiMode) => {
     try {
@@ -1666,15 +1676,20 @@ export default function App() {
       )}
 
       {appState === 'BRIEFING' && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1000] bg-black/80 backdrop-blur flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-slate-900 p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-cyan-500/30 text-center">
-            <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">{SCENARIOS[currentStageIndex]?.title}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">
+              {currentStageIndex === 1 ? "Tutorial Introduction" : "Stage 2: Main Experiment"}
+            </h2>
             <p className="text-slate-400 mb-4 sm:mb-8 text-sm sm:text-base">
-              {currentStageIndex === 2 ? getStage2Description(participantParity) : SCENARIOS[currentStageIndex]?.description}
+              {currentStageIndex === 1
+                ? "This is a tutorial to learn how the ticket system works. No time limit. Follow the instructions in the PDF file."
+                : getStage2Description(participantParity)}
             </p>
 
             <div className="mb-3 sm:mb-4 text-xs text-slate-500">
               <p>Participant ID: <span className="font-mono text-amber-400">{participantId}</span></p>
+              <p>Stage: <span className="font-mono text-cyan-400">{currentStageIndex}</span></p>
             </div>
 
             {currentStageIndex === 2 && participantParity === 'even' && (
