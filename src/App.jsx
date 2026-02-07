@@ -1897,7 +1897,7 @@ export default function App() {
           )}
 
           <div className="flex items-center gap-3">
-            {/* Кнопка смены режима ИИ для четных участников на втором этапе (во время активной смены) */}
+            {/* Кнопка смены режима ИИ - ТОЛЬКО для четных участников на втором этапе в активной смене */}
             {appState === 'ACTIVE' && currentStageIndex === 2 && participantParity === 'even' && (
               <button
                 onClick={() => {
@@ -1929,8 +1929,11 @@ export default function App() {
             <Route path="/agents" element={
               <div className="p-4 sm:p-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 pb-20 md:pb-0">
                 {agents.map(a => {
-                  const isGlobalOnline = areAgentsOnline;
-                  const isPersonallyOnline = a.status === 'online';
+                  // Для четных участников на втором этапе показываем ботов как оффлайн
+                  // Для нечетных участников на втором этапе показываем их реальный статус
+                  // На первом этапе (туториал) все оффлайн
+                  const isGlobalOnline = currentStageIndex === 2 && participantParity === 'odd';
+                  const isPersonallyOnline = a.status === 'online' && isGlobalOnline;
 
                   return (
                     <div
