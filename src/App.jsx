@@ -610,10 +610,11 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
   useEffect(() => {
     setAiAdvice(null);
     socket.on('ai:response', (data) => {
+      console.log(`🤖 Received AI response for ticket ${data.ticketId}:`, data.text.substring(0, 50));
       if (data.ticketId === id) setAiAdvice(data);
     });
     return () => socket.off('ai:response');
-  }, [id]);
+  }, [id, socket]);
 
   if (!ticket) return <div className="p-6 sm:p-10 text-white italic">Ticket not found...</div>;
   const isMyTicket = ticket.assignedTo === 'participant';
@@ -622,6 +623,17 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
   const showAI = currentStage === 2 && participantParity === 'even' && aiMode === 'normal';
   // Show delegation only at stage 2 for odd participants
   const showDelegation = currentStage === 2 && participantParity === 'odd';
+
+  const handleAskAI = () => {
+    console.log(`🤖 Asking AI for ticket ${ticket.id}`);
+    socket.emit('ai:ask', { ticketId: ticket.id });
+  };
+
+  const handleDelegate = (botId) => {
+    console.log(`👥 Delegating ticket ${ticket.id} to bot ${botId}`);
+    socket.emit('bot:delegate', { ticketId: ticket.id, botId });
+    setShowDelegationPanel(false);
+  };
 
   return (
     <div className="h-full flex flex-col p-4 sm:p-6 overflow-hidden pb-20 md:pb-0">
@@ -661,7 +673,7 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
             <div className="flex gap-2">
               {showAI && (
                 <button
-                  onClick={() => socket.emit('ai:ask', { ticketId: ticket.id })}
+                  onClick={handleAskAI}
                   className={`flex items-center gap-2 border hover:scale-105 transition-all px-3 sm:px-4 py-2 rounded-xl text-xs font-bold min-h-[40px]
                     ${ticket.isCritical
                       ? 'bg-gradient-to-r from-amber-600/40 to-red-600/40 border-amber-500/50 text-amber-100 hover:bg-amber-600'
@@ -835,11 +847,7 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                         <button
                           key={a.id}
                           disabled={!areAgentsOnline || !isMyTicket || !isOnline}
-                          onClick={() => {
-                            socket.emit('bot:delegate', { ticketId: ticket.id, botId: a.id });
-                            setShowDelegationPanel(false);
-                            navigate('/tickets');
-                          }}
+                          onClick={() => handleDelegate(a.id)}
                           className={`flex items-center gap-3 p-4 rounded-xl border text-sm transition-all min-h-[60px] 
                           ${areAgentsOnline && isMyTicket && isOnline
                               ? ticket.isCritical
@@ -875,7 +883,7 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                       <button
                         key={a.id}
                         disabled={!areAgentsOnline || !isMyTicket || !isOnline}
-                        onClick={() => { socket.emit('bot:delegate', { ticketId: ticket.id, botId: a.id }); navigate('/tickets'); }}
+                        onClick={() => handleDelegate(a.id)}
                         className={`flex items-center gap-2 p-3 rounded-xl border text-[10px] font-bold transition-all min-h-[44px]
                         ${areAgentsOnline && isMyTicket && isOnline
                             ? ticket.isCritical
@@ -915,7 +923,8 @@ const KBListPage = ({ kb, navigate }) => {
     <div className="p-4 sm:p-8 h-full flex flex-col pb-20 md:pb-0">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-0 flex items-center gap-2">
-          <Book className="text-amber-400" size={20} /> Knowledge Base
+          <Book className="text-amber-400" size={20} />
+          Knowledge Base
         </h2>
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500" size={18} />
@@ -961,15 +970,22 @@ const KBDetailPage = ({ kb, navigate }) => {
   );
 };
 
-const SummaryScreen = ({ tickets, onNext, isLastStage, participantParity }) => {
-  const total = tickets.length;
-  const solvedMe = tickets.filter(t => t.status === 'solved' && t.solutionAuthor === 'participant').length;
-  const solvedOthers = tickets.filter(t => t.status === 'solved' && t.solutionAuthor !== 'participant' && t.solutionAuthor !== 'AI').length;
-  const solvedAI = tickets.filter(t => t.status === 'solved' && t.solutionAuthor === 'AI').length;
-  const missedAssign = tickets.filter(t => t.status === 'not assigned').length;
-  const unsolved = tickets.filter(t => t.status === 'in Progress').length;
-  const criticalTickets = tickets.filter(t => t.isCritical).length;
-  const criticalSolved = tickets.filter(t => t.isCritical && t.status === 'solved').length;
+const SummaryScreen = ({ tickets, onNext, isLastStage, participantParity, stageTicketsStats }) => {
+  // Используем переданную статистику или вычисляем из текущих тикетов
+  const stats = stageTicketsStats || (() => {
+    const total = tickets.length;
+    const solvedMe = tickets.filter(t => t.status === 'solved' && t.solutionAuthor === 'participant').length;
+    const solvedOthers = tickets.filter(t => t.status === 'solved' && t.solutionAuthor !== 'participant' && t.solutionAuthor !== 'AI').length;
+    const solvedAI = tickets.filter(t => t.status === 'solved' && t.solutionAuthor === 'AI').length;
+    const missedAssign = tickets.filter(t => t.status === 'not assigned').length;
+    const unsolved = tickets.filter(t => t.status === 'in Progress').length;
+    const criticalTickets = tickets.filter(t => t.isCritical).length;
+    const criticalSolved = tickets.filter(t => t.isCritical && t.status === 'solved').length;
+    
+    return {
+      total, solvedMe, solvedOthers, solvedAI, missedAssign, unsolved, criticalTickets, criticalSolved
+    };
+  })();
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
@@ -978,41 +994,41 @@ const SummaryScreen = ({ tickets, onNext, isLastStage, participantParity }) => {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="p-3 sm:p-4 bg-white/5 rounded-xl sm:rounded-2xl border border-white/5">
-            <div className="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">{total}</div>
+            <div className="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">{stats.total}</div>
             <div className="text-[10px] sm:text-xs text-slate-500 uppercase font-black">Total Tickets</div>
           </div>
           <div className="p-3 sm:p-4 bg-cyan-900/20 rounded-xl sm:rounded-2xl border border-cyan-500/30">
-            <div className="text-2xl sm:text-4xl font-bold text-cyan-400 mb-1 sm:mb-2">{solvedMe}</div>
+            <div className="text-2xl sm:text-4xl font-bold text-cyan-400 mb-1 sm:mb-2">{stats.solvedMe}</div>
             <div className="text-[10px] sm:text-xs text-cyan-200 uppercase font-black">Solved by Me</div>
           </div>
-          {criticalTickets > 0 && (
+          {stats.criticalTickets > 0 && (
             <div className="p-3 sm:p-4 bg-gradient-to-r from-red-900/30 to-amber-900/20 rounded-xl sm:rounded-2xl border border-red-500/30">
-              <div className="text-2xl sm:text-4xl font-bold text-amber-400 mb-1 sm:mb-2">{criticalTickets}</div>
+              <div className="text-2xl sm:text-4xl font-bold text-amber-400 mb-1 sm:mb-2">{stats.criticalTickets}</div>
               <div className="text-[10px] sm:text-xs text-amber-200 uppercase font-black">Critical Tickets</div>
-              <div className="text-[8px] text-amber-400 mt-1">{criticalSolved}/{criticalTickets} resolved</div>
+              <div className="text-[8px] text-amber-400 mt-1">{stats.criticalSolved}/{stats.criticalTickets} resolved</div>
             </div>
           )}
           {participantParity === 'even' ? (
             <div className="col-span-2 sm:col-span-1 p-3 sm:p-4 bg-indigo-900/20 rounded-xl sm:rounded-2xl border border-indigo-500/30">
-              <div className="text-2xl sm:text-4xl font-bold text-indigo-400 mb-1 sm:mb-2">{solvedAI}</div>
+              <div className="text-2xl sm:text-4xl font-bold text-indigo-400 mb-1 sm:mb-2">{stats.solvedAI}</div>
               <div className="text-[10px] sm:text-xs text-indigo-200 uppercase font-black">Solved with AI</div>
             </div>
           ) : (
             <div className="col-span-2 sm:col-span-1 p-3 sm:p-4 bg-amber-900/20 rounded-xl sm:rounded-2xl border border-amber-500/30">
-              <div className="text-2xl sm:text-4xl font-bold text-amber-400 mb-1 sm:mb-2">{solvedOthers}</div>
+              <div className="text-2xl sm:text-4xl font-bold text-amber-400 mb-1 sm:mb-2">{stats.solvedOthers}</div>
               <div className="text-[10px] sm:text-xs text-amber-200 uppercase font-black">Solved by Colleagues</div>
             </div>
           )}
         </div>
 
         <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-8 mb-6 sm:mb-10 text-xs sm:text-sm text-slate-400">
-          <div className="flex items-center gap-2"><span className="w-2 h-2 sm:w-3 sm:h-3 bg-rose-500 rounded-full"></span> Not assigned: {missedAssign}</div>
-          <div className="flex items-center gap-2"><span className="w-2 h-2 sm:w-3 sm:h-3 bg-amber-500 rounded-full"></span> In progress: {unsolved}</div>
-          {criticalTickets > 0 && (
-            <div className="flex items-center gap-2"><span className="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full animate-pulse"></span> Critical: {criticalTickets}</div>
+          <div className="flex items-center gap-2"><span className="w-2 h-2 sm:w-3 sm:h-3 bg-rose-500 rounded-full"></span> Not assigned: {stats.missedAssign}</div>
+          <div className="flex items-center gap-2"><span className="w-2 h-2 sm:w-3 sm:h-3 bg-amber-500 rounded-full"></span> In progress: {stats.unsolved}</div>
+          {stats.criticalTickets > 0 && (
+            <div className="flex items-center gap-2"><span className="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full animate-pulse"></span> Critical: {stats.criticalTickets}</div>
           )}
           {participantParity === 'odd' && (
-            <div className="flex items-center gap-2"><span className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></span> Solved by colleagues: {solvedOthers}</div>
+            <div className="flex items-center gap-2"><span className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></span> Solved by colleagues: {stats.solvedOthers}</div>
           )}
         </div>
 
@@ -1151,6 +1167,12 @@ export default function App() {
   const [showAIModeSelector, setShowAIModeSelector] = useState(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  // НОВОЕ: Сохраняем статистику по этапам
+  const [stageStats, setStageStats] = useState({
+    1: null, // статистика для туториала
+    2: null  // статистика для второго этапа
+  });
 
   // Используем ref для хранения текущей стадии, чтобы иметь доступ к актуальному значению внутри замыканий
   const currentStageRef = useRef(1);
@@ -1208,7 +1230,8 @@ export default function App() {
     // Load pre-experiment survey questions
     const loadPreExperimentSurvey = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/survey/pre-experiment');
+        const response = await axios.get(`${API_BASE_URL}/api/survey/pre-experiment`);
+        console.log('📊 Loaded pre-experiment survey questions:', response.data.questions.length);
         setSurveyQuestions(response.data.questions);
         setSurveyType('pre-experiment');
       } catch (error) {
@@ -1235,6 +1258,15 @@ export default function App() {
     });
 
     socket.on('init', (data) => {
+      console.log('📦 Received init data from server:', {
+        tickets: data.tickets?.length || 0,
+        kbArticles: data.kbArticles?.length || 0,
+        agents: data.agents?.length || 0,
+        currentStage: data.currentStage,
+        aiMode: data.aiMode,
+        parity: data.participantParity
+      });
+      
       setTickets(data.tickets || []);
       setKb(data.kbArticles || []);
       setAgents(data.agents || []);
@@ -1252,9 +1284,20 @@ export default function App() {
       }
     });
 
-    socket.on('tickets:update', setTickets);
-    socket.on('ticket:new', t => setTickets(p => [t, ...p]));
-    socket.on('agents:update', setAgents);
+    socket.on('tickets:update', (updatedTickets) => {
+      console.log('🎫 Tickets updated:', updatedTickets.length, 'tickets');
+      setTickets(updatedTickets);
+    });
+    
+    socket.on('ticket:new', (newTicket) => {
+      console.log('🆕 New ticket received:', newTicket.title);
+      setTickets(prev => [newTicket, ...prev]);
+    });
+    
+    socket.on('agents:update', (updatedAgents) => {
+      console.log('👥 Agents updated:', updatedAgents.length, 'agents');
+      setAgents(updatedAgents);
+    });
 
     // Listen for timer updates from server
     socket.on('shift:timer:update', (data) => {
@@ -1269,19 +1312,23 @@ export default function App() {
 
     // Listen for AI mode changes from server
     socket.on('ai:mode_changed', (data) => {
+      console.log('🤖 AI mode changed to:', data.aiMode);
       setAiMode(data.aiMode);
       addToast('System', `AI mode changed to: ${data.aiMode === 'normal' ? 'Normal' : 'Autonomous'}`, 'info');
     });
 
     socket.on('bot:notification', (data) => {
+      console.log('👥 Bot notification:', data);
       addToast(data.botName, data.message, data.type);
     });
 
     socket.on('ai:notification', (data) => {
+      console.log('🤖 AI notification:', data);
       addToast('AI Assistant', data.message, 'info');
     });
 
     socket.on('ai:autonomous_action', (data) => {
+      console.log('🤖 AI autonomous action:', data);
       if (data.type === 'missed') {
         addToast('AI Assistant', `Missed ${data.ticketId.includes('critical') ? '🚨 CRITICAL ' : ''}ticket #${data.ticketId.slice(0, 5)}`, 'warning');
       } else if (data.type === 'solved') {
@@ -1294,7 +1341,13 @@ export default function App() {
     });
 
     socket.on('client:notification', (data) => {
+      console.log('👤 Client notification:', data);
       addToast('Client', data.message, data.type);
+    });
+    
+    // Listen for tutorial completion acknowledgment
+    socket.on('tutorial:completed:ack', (data) => {
+      console.log('✅ Tutorial completion acknowledged by server:', data);
     });
 
     return () => {
@@ -1309,6 +1362,7 @@ export default function App() {
       socket.off('ai:notification');
       socket.off('ai:autonomous_action');
       socket.off('client:notification');
+      socket.off('tutorial:completed:ack');
     };
   }, [participantId, participantParity]);
 
@@ -1358,6 +1412,7 @@ export default function App() {
   const loadPostExperimentSurvey = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/survey/post-experiment?parity=${participantParity}`);
+      console.log('📊 Loaded post-experiment survey questions:', response.data.questions.length);
       setSurveyQuestions(response.data.questions);
       setSurveyType('post-experiment');
       setAppState('SURVEY');
@@ -1370,7 +1425,6 @@ export default function App() {
   const startShift = async () => {
     try {
       // Ensure we are using the currentStageIndex from state, but default to 2 if we think we are past tutorial
-      // This protects against a case where UI shows Stage 2 but variable is 1
       let stageToStart = currentStageIndex;
       if (appState === 'BRIEFING' && SCENARIOS[2] && SCENARIOS[currentStageIndex]?.title === SCENARIOS[2].title) {
         stageToStart = 2;
@@ -1436,18 +1490,58 @@ export default function App() {
   };
 
   const finishShift = () => {
+    // Сохраняем статистику текущего этапа перед переходом
+    const currentStats = calculateStageStats(tickets, participantParity);
+    setStageStats(prev => ({
+      ...prev,
+      [currentStageIndex]: currentStats
+    }));
+    
     setAppState('SUMMARY');
     setTimeLeft(0);
   };
 
   const forceFinishShift = () => {
+    // Сохраняем статистику текущего этапа перед переходом
+    const currentStats = calculateStageStats(tickets, participantParity);
+    setStageStats(prev => ({
+      ...prev,
+      [currentStageIndex]: currentStats
+    }));
+    
     setTimeLeft(0);
     setAppState('SUMMARY');
+  };
+
+  // Функция для вычисления статистики этапа
+  const calculateStageStats = (stageTickets, parity) => {
+    const total = stageTickets.length;
+    const solvedMe = stageTickets.filter(t => t.status === 'solved' && t.solutionAuthor === 'participant').length;
+    const solvedOthers = stageTickets.filter(t => t.status === 'solved' && t.solutionAuthor !== 'participant' && t.solutionAuthor !== 'AI').length;
+    const solvedAI = stageTickets.filter(t => t.status === 'solved' && t.solutionAuthor === 'AI').length;
+    const missedAssign = stageTickets.filter(t => t.status === 'not assigned').length;
+    const unsolved = stageTickets.filter(t => t.status === 'in Progress').length;
+    const criticalTickets = stageTickets.filter(t => t.isCritical).length;
+    const criticalSolved = stageTickets.filter(t => t.isCritical && t.status === 'solved').length;
+    
+    return {
+      total, solvedMe, solvedOthers, solvedAI, missedAssign, unsolved, criticalTickets, criticalSolved
+    };
   };
 
   const finishTutorial = async () => {
     try {
       console.log('🎓 Finishing tutorial...');
+
+      // Сохраняем статистику туториала
+      const tutorialStats = calculateStageStats(
+        tickets.filter(t => t.isTutorial),
+        participantParity
+      );
+      setStageStats(prev => ({
+        ...prev,
+        1: tutorialStats
+      }));
 
       // Сохраняем состояние в sessionStorage
       sessionStorage.setItem('tutorialCompleted', 'true');
@@ -1462,8 +1556,6 @@ export default function App() {
       });
 
       // Переходим к следующему этапу немедленно
-      // Мы не ждем ACK, потому что сервер может быть занят, а UI должен обновиться
-      // Сервер сам обновит свое состояние при получении события
       proceedToStage2();
 
     } catch (error) {
@@ -1477,10 +1569,6 @@ export default function App() {
   const proceedToStage2 = () => {
     console.log('🚀 Proceeding to stage 2...');
 
-    // Очистка данных туториала на клиенте немедленно
-    setTickets([]);
-    setKb([]);
-    
     // Принудительно устанавливаем стадию 2
     setCurrentStageIndex(2);
     currentStageRef.current = 2; // Обновляем ref синхронно для слушателей сокетов
@@ -1801,6 +1889,7 @@ export default function App() {
           tickets={tickets}
           isLastStage={currentStageIndex >= 2}
           participantParity={participantParity}
+          stageTicketsStats={stageStats[currentStageIndex]}
           onNext={() => {
             if (currentStageIndex < 2) {
               setCurrentStageIndex(p => p + 1);
