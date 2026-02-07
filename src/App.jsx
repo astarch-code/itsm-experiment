@@ -1375,18 +1375,24 @@ export default function App() {
     // Reset timer and clear session storage
     setTimeLeft(0);
     sessionStorage.removeItem('shiftEndTime');
-    sessionStorage.removeItem('shiftStage');
+    
+    // Explicitly set next stage in storage to prevent revert on reload
+    sessionStorage.setItem('shiftStage', '2');
 
-    // Отправляем событие на сервер о завершении туториала
+    // Send event to server to update backend state
     socket.emit('tutorial:completed', { participantId });
 
-    // Move to next stage (experiment)
+    // Force update local state immediately
     setCurrentStageIndex(2);
     setAppState('BRIEFING');
+    
+    // Ensure tutorial briefing is closed
+    setShowTutorialBriefing(false);
 
-    // Навигация на главную страницу
+    // Navigation
     navigate('/tickets');
   };
+  
   // Handle AI mode change during experiment
   const handleChangeAiMode = async (newAiMode) => {
     try {
