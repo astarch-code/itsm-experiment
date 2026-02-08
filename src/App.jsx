@@ -774,8 +774,7 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                             : ticket.isTutorial
                               ? 'bg-gradient-to-r from-indigo-900/30 to-purple-900/20 text-indigo-200 border border-indigo-500/30'
                               : 'bg-indigo-900/30 text-indigo-200'
-                          : 'bg-slate-700/40 text-slate-300'
-                  }`}
+                          : 'bg-slate-700/40 text-slate-300'}`}
               >
                 <div className="text-[10px] uppercase opacity-60 mb-1">
                   {m.from} • {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -1217,6 +1216,7 @@ export default function App() {
   const [showTutorialBriefing, setShowTutorialBriefing] = useState(false);
   const [showHtmlViewer, setShowHtmlViewer] = useState(false);
   const [htmlViewerMode, setHtmlViewerMode] = useState('reference'); // 'tutorial' or 'reference'
+  const [isLoadingParticipant, setIsLoadingParticipant] = useState(true);
 
   const [tickets, setTickets] = useState([]);
   const [kb, setKb] = useState([]);
@@ -1273,38 +1273,84 @@ export default function App() {
     }
   }, []);
 
-  // Generate participant ID and determine parity on initial load
+  // ИНИЦИАЛИЗАЦИЯ УЧАСТНИКА - КРИТИЧЕСКИЙ ЭФФЕКТ
   useEffect(() => {
-    // Генерируем новый ID при каждом запуске приложения
-    const id = 'P_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    setParticipantId(id);
-
-    // Determine participant parity by last digit of ID
-    const lastChar = id.charAt(id.length - 1);
-    const isEven = !isNaN(lastChar) ? parseInt(lastChar) % 2 === 0 : Math.random() > 0.5;
-    const parity = isEven ? 'even' : 'odd';
-    setParticipantParity(parity);
-
-    console.log(`Participant ID: ${id}, Parity: ${parity}`);
-
-    // Load pre-experiment survey questions
-    const loadPreExperimentSurvey = async () => {
+    const initializeParticipant = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/survey/pre-experiment`);
-        console.log('📊 Loaded pre-experiment survey questions:', response.data.questions.length);
-        setSurveyQuestions(response.data.questions);
-        setSurveyType('pre-experiment');
+        setIsLoadingParticipant(true);
+        
+        // Проверяем, есть ли сохранённый participantId в localStorage
+        const savedParticipantId = localStorage.getItem('participantId');
+        
+        let response;
+        
+        if (savedParticipantId) {
+          // Пытаемся восстановить существующего участника
+          console.log(`🔄 Trying to restore participant: ${savedParticipantId}`);
+          response = await axios.post(`${API_BASE_URL}/api/participant`, {
+            participantId: savedParticipantId
+          });
+          
+          if (response.data.success) {
+            console.log(`✅ Restored participant: ${response.data.participantId} (${response.data.parity})`);
+          }
+        }
+        
+        if (!response || !response.data.success) {
+          // Создаём нового участника
+          console.log('🆕 Creating new participant...');
+          response = await axios.post(`${API_BASE_URL}/api/participant`);
+          
+          if (response.data.success) {
+            console.log(`✅ Created new participant: ${response.data.participantId} (${response.data.parity})`);
+          }
+        }
+        
+        if (response.data.success) {
+          // Сохраняем данные участника
+          setParticipantId(response.data.participantId);
+          setParticipantParity(response.data.parity);
+          
+          // Сохраняем в localStorage
+          localStorage.setItem('participantId', response.data.participantId);
+          localStorage.setItem('participantParity', response.data.parity);
+          
+          console.log(`📋 Participant initialized: ${response.data.participantId}, Group: ${response.data.parity}`);
+        } else {
+          console.error('❌ Failed to initialize participant');
+        }
       } catch (error) {
-        console.error('Failed to load pre-experiment survey questions:', error);
-        // Skip to tutorial briefing if survey fails
-        setShowTutorialBriefing(true);
+        console.error('❌ Error initializing participant:', error);
+        addToast('System', 'Failed to initialize participant. Please refresh the page.', 'error');
+      } finally {
+        setIsLoadingParticipant(false);
       }
     };
 
     if (appState === 'INTRO') {
-      loadPreExperimentSurvey();
+      initializeParticipant();
     }
   }, [appState]);
+
+  // Загрузка предэкспериментального опроса после инициализации участника
+  useEffect(() => {
+    const loadSurvey = async () => {
+      if (participantId && participantParity && appState === 'INTRO') {
+        try {
+          const response = await axios.get(`${API_BASE_URL}/api/survey/pre-experiment`);
+          console.log('📊 Loaded pre-experiment survey questions:', response.data.questions.length);
+          setSurveyQuestions(response.data.questions);
+          setSurveyType('pre-experiment');
+        } catch (error) {
+          console.error('Failed to load pre-experiment survey questions:', error);
+          // Пропускаем опрос, если не удалось загрузить
+          setShowTutorialBriefing(true);
+        }
+      }
+    };
+
+    loadSurvey();
+  }, [participantId, participantParity, appState]);
 
   // ВАЖНОЕ ИЗМЕНЕНИЕ: добавляем эффект для переподключения
   useEffect(() => {
@@ -1312,7 +1358,7 @@ export default function App() {
 
     const handleInit = () => {
       console.log("🔄 Re-initializing session on reconnect...");
-      socket.emit('request:init', { participantId, participantParity });
+      socket.emit('request:init', { participantId });
     };
 
     // Если сокет уже подключен — инициализируем
@@ -1324,7 +1370,7 @@ export default function App() {
     return () => {
       socket.off('connect', handleInit);
     };
-  }, [participantId, participantParity]);
+  }, [participantId]);
 
   useEffect(() => {
     if (!participantId || !participantParity) {
@@ -1335,8 +1381,7 @@ export default function App() {
     const initializeSession = () => {
       console.log('🔄 Initializing session with server...');
       socket.emit('request:init', {
-        participantId,
-        participantParity
+        participantId
       });
     };
 
@@ -1439,6 +1484,12 @@ export default function App() {
       console.log('✅ Tutorial completion acknowledged by server:', data);
     });
 
+    // Listen for init errors
+    socket.on('init_error', (data) => {
+      console.error('❌ Init error:', data);
+      addToast('System', data.message || 'Failed to initialize session', 'error');
+    });
+
     return () => {
       socket.off('connect', initializeSession); // Не забудьте отписаться
       socket.off('init');
@@ -1453,6 +1504,7 @@ export default function App() {
       socket.off('ai:autonomous_action');
       socket.off('client:notification');
       socket.off('tutorial:completed:ack');
+      socket.off('init_error');
     };
   }, [participantId, participantParity]);
 
@@ -1706,6 +1758,18 @@ export default function App() {
     }
   };
 
+  if (isLoadingParticipant && appState === 'INTRO') {
+    return (
+      <div className="h-screen bg-slate-950 flex items-center justify-center p-4 text-white text-center">
+        <div className="max-w-md bg-slate-900 p-8 rounded-2xl border border-cyan-500/30">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-bold mb-2">Initializing Participant</h2>
+          <p className="text-slate-400">Setting up your experiment session...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (appState === 'INTRO') return (
     <div className="h-screen bg-slate-950 flex items-center justify-center p-4 text-white text-center">
       <div className="max-w-xl bg-slate-900 p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-white/10">
@@ -1917,6 +1981,7 @@ export default function App() {
 
             <div className="mb-3 sm:mb-4 text-xs text-slate-500">
               <p>Participant ID: <span className="font-mono text-amber-400">{participantId}</span></p>
+              <p>Group: <span className={`font-bold ${participantParity === 'even' ? 'text-indigo-400' : 'text-amber-400'}`}>{participantParity === 'even' ? 'AI Assistant' : 'Team Work'}</span></p>
             </div>
 
             {currentStageIndex === 2 && participantParity === 'even' && (
@@ -2032,6 +2097,11 @@ export default function App() {
               <h1 className="font-bold text-white text-base sm:text-lg">Workplace</h1>
               <div className="text-[10px] uppercase text-slate-500 tracking-widest font-bold">
                 {currentStageIndex === 1 ? "Tutorial Mode" : "Shift Active"}
+                {participantParity && (
+                  <span className={`ml-2 px-2 py-1 rounded ${participantParity === 'even' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                    {participantParity === 'even' ? 'AI Group' : 'Team Group'}
+                  </span>
+                )}
               </div>
             </div>
           </div>
