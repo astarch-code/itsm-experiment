@@ -10,8 +10,10 @@ import {
   AlertTriangle, Flame, Siren, HelpCircle, Play, GraduationCap, FileText, Download
 } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:3001' : window.location.origin);
-
+const API_BASE_URL = window.location.origin.includes('localhost') 
+  ? 'http://localhost:3001' 
+  : 'https://server-1vsr.onrender.com';
+  
 const SHIFT_DURATION_SEC = 600;
 
 const SCENARIOS = {
