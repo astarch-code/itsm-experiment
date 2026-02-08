@@ -626,7 +626,10 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
   }, [id, socket]);
 
   if (!ticket) return <div className="p-6 sm:p-10 text-white italic">Ticket not found...</div>;
-  const isMyTicket = ticket.assignedTo === 'participant';
+  
+  // Проверяем, является ли тикет назначенным на участника (должен быть в статусе 'in Progress' и assignedTo === 'participant')
+  const isMyTicket = ticket.status === 'in Progress' && ticket.assignedTo === 'participant';
+  const canDelegate = areAgentsOnline && isMyTicket;
 
   // Show AI only at stage 2 for even participants in normal mode
   const showAI = currentStage === 2 && participantParity === 'even' && aiMode === 'normal';
@@ -654,14 +657,6 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
       ticketId: ticket.id, 
       newStatus: newStatus 
     });
-    
-    // Немедленно обновляем локальное состояние для лучшего UX
-    ticket.status = newStatus;
-    if (newStatus === 'in Progress') {
-      ticket.assignedTo = 'participant';
-    } else if (newStatus === 'not assigned') {
-      ticket.assignedTo = null;
-    }
   };
 
   return (
@@ -872,15 +867,15 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                   <div className="grid grid-cols-1 gap-3">
                     {agents.map(a => {
                       const isOnline = a.status === 'online';
-                      const canDelegate = areAgentsOnline && isMyTicket && isOnline;
+                      const canDelegateNow = canDelegate && isOnline;
                       
                       return (
                         <button
                           key={a.id}
-                          disabled={!canDelegate}
+                          disabled={!canDelegateNow}
                           onClick={() => handleDelegate(a.id)}
                           className={`flex items-center gap-3 p-4 rounded-xl border text-sm transition-all min-h-[60px] 
-                          ${canDelegate
+                          ${canDelegateNow
                               ? ticket.isCritical
                                 ? 'bg-gradient-to-r from-amber-600/30 to-red-600/20 border-amber-500/40 text-white hover:from-amber-700 hover:to-red-600'
                                 : 'bg-indigo-600/20 border-indigo-500/30 text-white hover:bg-indigo-600'
@@ -894,7 +889,7 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                             <span className={`text-xs ${isOnline ? 'text-green-500' : 'text-amber-500'}`}>
                               {isOnline ? 'Online • Available' : 'Away • Busy'}
                             </span>
-                            {!canDelegate && (
+                            {!canDelegateNow && (
                               <span className="text-[10px] text-slate-400 mt-1">
                                 {!areAgentsOnline ? 'Team not available' : !isMyTicket ? 'Assign ticket first' : !isOnline ? 'Colleague away' : ''}
                               </span>
@@ -915,15 +910,15 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                 <div className="grid grid-cols-1 gap-2">
                   {agents.map(a => {
                     const isOnline = a.status === 'online';
-                    const canDelegate = areAgentsOnline && isMyTicket && isOnline;
+                    const canDelegateNow = canDelegate && isOnline;
                     
                     return (
                       <button
                         key={a.id}
-                        disabled={!canDelegate}
+                        disabled={!canDelegateNow}
                         onClick={() => handleDelegate(a.id)}
                         className={`flex items-center gap-2 p-3 rounded-xl border text-[10px] font-bold transition-all min-h-[44px]
-                        ${canDelegate
+                        ${canDelegateNow
                             ? ticket.isCritical
                               ? 'bg-gradient-to-r from-amber-600/30 to-red-600/20 border-amber-500/40 text-white hover:from-amber-700 hover:to-red-600'
                               : 'bg-indigo-600/20 border-indigo-500/30 text-white hover:bg-indigo-600'
@@ -943,7 +938,7 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                   })}
                 </div>
                 <div className="mt-4 text-xs text-slate-500">
-                  <p>• Delegation available only when ticket is assigned to you</p>
+                  <p>• Delegation available only when ticket is assigned to you (status "In Progress")</p>
                   <p>• Colleagues must be online (green status)</p>
                   <p>• Critical tickets have shorter response time</p>
                 </div>
