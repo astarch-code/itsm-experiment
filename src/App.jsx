@@ -10,10 +10,10 @@ import {
   AlertTriangle, Flame, Siren, HelpCircle, Play, GraduationCap, FileText, Download
 } from 'lucide-react';
 
-const API_BASE_URL = window.location.origin.includes('localhost') 
-  ? 'http://localhost:3001' 
+const API_BASE_URL = window.location.origin.includes('localhost')
+  ? 'http://localhost:3001'
   : 'https://server-1vsr.onrender.com';
-  
+
 const SHIFT_DURATION_SEC = 600;
 
 const SCENARIOS = {
@@ -1278,43 +1278,43 @@ export default function App() {
     const initializeParticipant = async () => {
       try {
         setIsLoadingParticipant(true);
-        
+
         // Проверяем, есть ли сохранённый participantId в localStorage
         const savedParticipantId = localStorage.getItem('participantId');
-        
+
         let response;
-        
+
         if (savedParticipantId) {
           // Пытаемся восстановить существующего участника
           console.log(`🔄 Trying to restore participant: ${savedParticipantId}`);
           response = await axios.post(`${API_BASE_URL}/api/participant`, {
             participantId: savedParticipantId
           });
-          
+
           if (response.data.success) {
             console.log(`✅ Restored participant: ${response.data.participantId} (${response.data.parity})`);
           }
         }
-        
+
         if (!response || !response.data.success) {
           // Создаём нового участника
           console.log('🆕 Creating new participant...');
           response = await axios.post(`${API_BASE_URL}/api/participant`);
-          
+
           if (response.data.success) {
             console.log(`✅ Created new participant: ${response.data.participantId} (${response.data.parity})`);
           }
         }
-        
+
         if (response.data.success) {
           // Сохраняем данные участника
           setParticipantId(response.data.participantId);
           setParticipantParity(response.data.parity);
-          
+
           // Сохраняем в localStorage
           localStorage.setItem('participantId', response.data.participantId);
           localStorage.setItem('participantParity', response.data.parity);
-          
+
           console.log(`📋 Participant initialized: ${response.data.participantId}, Group: ${response.data.parity}`);
         } else {
           console.error('❌ Failed to initialize participant');
@@ -1735,7 +1735,11 @@ export default function App() {
       if (response.data.success) {
         setAiMode(response.data.aiMode);
         setShowAIModeSelector(false);
-        addToast('System', `AI mode changed to ${newAiMode === 'normal' ? 'Normal' : 'Autonomous'}`, 'success');
+
+        // Логируем оставшееся время
+        console.log(`🔄 AI mode changed to ${newAiMode}, time remaining: ${response.data.timeRemaining || 'unknown'}`);
+
+        addToast('System', `AI mode changed to ${newAiMode === 'normal' ? 'Normal' : 'Autonomous'} (time remaining: ${response.data.timeRemaining}s)`, 'success');
       }
     } catch (error) {
       console.error('Error changing AI mode:', error);
