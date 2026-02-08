@@ -3,9 +3,9 @@ import { io } from 'socket.io-client';
 const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:3001' : window.location.origin);
 
 export const socket = io(API_BASE_URL, {
-  transports: ['websocket', 'polling'],
+  transports: ['websocket'],
   reconnection: true,
-  reconnectionAttempts: 5,
+  reconnectionAttempts: 10,
   reconnectionDelay: 1000,
   timeout: 20000
 });
