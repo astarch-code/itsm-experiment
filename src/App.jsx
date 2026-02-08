@@ -492,7 +492,7 @@ const MobileBottomNav = ({ activeRoute, navigate }) => {
 
 // --- PAGES ---
 
-const TicketsPage = ({ tickets, socket, navigate, currentStage }) => {
+const TicketsPage = ({ tickets, socket, navigate, currentStage, participantId }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredTickets = tickets.filter(t =>
@@ -504,9 +504,10 @@ const TicketsPage = ({ tickets, socket, navigate, currentStage }) => {
   // Функция для изменения статуса тикета
   const handleStatusChange = (ticketId, newStatus) => {
     console.log(`🔄 Changing ticket ${ticketId} status to ${newStatus}`);
-    socket.emit('ticket:status:update', { 
-      ticketId: ticketId, 
-      newStatus: newStatus 
+    socket.emit('ticket:status:update', {
+      ticketId: ticketId,
+      newStatus: newStatus,
+      participantId: participantId
     });
   };
 
@@ -608,7 +609,7 @@ const TicketsPage = ({ tickets, socket, navigate, currentStage }) => {
   );
 };
 
-const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnline, currentStage, aiMode, participantParity }) => {
+const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnline, currentStage, aiMode, participantParity, participantId }) => {
   const { id } = useParams();
   const ticket = tickets.find(t => t.id === id);
   const [sol, setSol] = useState('');
@@ -626,8 +627,7 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
   }, [id, socket]);
 
   if (!ticket) return <div className="p-6 sm:p-10 text-white italic">Ticket not found...</div>;
-  
-  // Проверяем, является ли тикет назначенным на участника (должен быть в статусе 'in Progress' и assignedTo === 'participant')
+
   const isMyTicket = ticket.status === 'in Progress' && ticket.assignedTo === 'participant';
   const canDelegate = areAgentsOnline && isMyTicket;
 
@@ -647,11 +647,12 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
     setShowDelegationPanel(false);
   };
 
-  // Функция для быстрого взятия тикета в работу (добавьте это внутри компонента TicketDetailPage)
+  // Функция для быстрого взятия тикета в работу
   const assignToMe = () => {
-    socket.emit('ticket:status:update', { 
-      ticketId: ticket.id, 
-      newStatus: 'in Progress' 
+    socket.emit('ticket:status:update', {
+      ticketId: ticket.id,
+      newStatus: 'in Progress',
+      participantId: participantId
     });
   };
 
@@ -659,14 +660,14 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
   const handleStatusChange = (e) => {
     const newStatus = e.target.value;
     console.log(`🔄 Changing ticket ${ticket.id} status from ${ticket.status} to ${newStatus}`);
-    
+
     // Отправляем событие на сервер
-    socket.emit('ticket:status:update', { 
-      ticketId: ticket.id, 
-      newStatus: newStatus 
+    socket.emit('ticket:status:update', {
+      ticketId: ticket.id,
+      newStatus: newStatus,
+      participantId: participantId
     });
   };
-
   return (
     <div className="h-full flex flex-col p-4 sm:p-6 overflow-hidden pb-20 md:pb-0">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
@@ -849,7 +850,7 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
               ${ticket.isCritical
                 ? 'bg-red-900/10 border-red-500/30'
                 : 'bg-slate-800/30 border-slate-700'}`}>
-                
+
               <div className="mb-4 text-slate-400 max-w-md">
                 {ticket.isCritical
                   ? '🚨 This is a CRITICAL ticket. You must assign it to yourself immediately to solve it.'
@@ -885,7 +886,7 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                     {agents.map(a => {
                       const isOnline = a.status === 'online';
                       const canDelegateNow = canDelegate && isOnline;
-                      
+
                       return (
                         <button
                           key={a.id}
@@ -928,7 +929,7 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                   {agents.map(a => {
                     const isOnline = a.status === 'online';
                     const canDelegateNow = canDelegate && isOnline;
-                    
+
                     return (
                       <button
                         key={a.id}
@@ -1038,7 +1039,7 @@ const SummaryScreen = ({ tickets, onNext, isLastStage, participantParity, stageT
     const unsolved = tickets.filter(t => t.status === 'in Progress').length;
     const criticalTickets = tickets.filter(t => t.isCritical).length;
     const criticalSolved = tickets.filter(t => t.isCritical && t.status === 'solved').length;
-    
+
     return {
       total, solvedMe, solvedOthers, solvedAI, missedAssign, unsolved, criticalTickets, criticalSolved
     };
@@ -1224,7 +1225,7 @@ export default function App() {
   const [showAIModeSelector, setShowAIModeSelector] = useState(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
+
   // НОВОЕ: Сохраняем статистику по этапам
   const [stageStats, setStageStats] = useState({
     1: null, // статистика для туториала
@@ -1303,6 +1304,26 @@ export default function App() {
     }
   }, [appState]);
 
+  // ВАЖНОЕ ИЗМЕНЕНИЕ: добавляем эффект для переподключения
+  useEffect(() => {
+    if (!participantId) return;
+
+    const handleInit = () => {
+      console.log("🔄 Re-initializing session on reconnect...");
+      socket.emit('request:init', { participantId, participantParity });
+    };
+
+    // Если сокет уже подключен — инициализируем
+    if (socket.connected) handleInit();
+
+    // При каждом (пере)подключении сообщаем серверу, кто мы
+    socket.on('connect', handleInit);
+
+    return () => {
+      socket.off('connect', handleInit);
+    };
+  }, [participantId, participantParity]);
+
   useEffect(() => {
     if (!participantId || !participantParity) {
       return;
@@ -1332,13 +1353,13 @@ export default function App() {
         aiMode: data.aiMode,
         parity: data.participantParity
       });
-      
+
       setTickets(data.tickets || []);
       setKb(data.kbArticles || []);
       setAgents(data.agents || []);
       if (data.aiMode) setAiMode(data.aiMode);
       if (data.participantParity) setParticipantParity(data.participantParity);
-      
+
       // Critical check: don't revert to stage 1 if we are already at stage 2 locally
       if (data.currentStage) {
         // If the incoming stage is greater than or equal to what we have, accept it
@@ -1354,12 +1375,12 @@ export default function App() {
       console.log('🎫 Tickets updated:', updatedTickets.length, 'tickets');
       setTickets(updatedTickets);
     });
-    
+
     socket.on('ticket:new', (newTicket) => {
       console.log('🆕 New ticket received:', newTicket.title);
       setTickets(prev => [newTicket, ...prev]);
     });
-    
+
     socket.on('agents:update', (updatedAgents) => {
       console.log('👥 Agents updated:', updatedAgents.length, 'agents');
       setAgents(updatedAgents);
@@ -1410,7 +1431,7 @@ export default function App() {
       console.log('👤 Client notification:', data);
       addToast('Client', data.message, data.type);
     });
-    
+
     // Listen for tutorial completion acknowledgment
     socket.on('tutorial:completed:ack', (data) => {
       console.log('✅ Tutorial completion acknowledged by server:', data);
@@ -1517,7 +1538,7 @@ export default function App() {
       if (currentStageRef.current === 2) {
         stageToStart = 2;
       }
-      
+
       console.log(`Starting shift with stage: ${stageToStart}, parity: ${participantParity}, AI mode: ${selectedAiMode}, participantId: ${participantId}`);
 
       const response = await axios.post(`${API_BASE_URL}/admin/start`, {
@@ -1563,7 +1584,7 @@ export default function App() {
       ...prev,
       [currentStageIndex]: currentStats
     }));
-    
+
     setAppState('SUMMARY');
     setTimeLeft(0);
   };
@@ -1575,7 +1596,7 @@ export default function App() {
       ...prev,
       [currentStageIndex]: currentStats
     }));
-    
+
     setTimeLeft(0);
     setAppState('SUMMARY');
   };
@@ -1590,7 +1611,7 @@ export default function App() {
     const unsolved = stageTickets.filter(t => t.status === 'in Progress').length;
     const criticalTickets = stageTickets.filter(t => t.isCritical).length;
     const criticalSolved = stageTickets.filter(t => t.isCritical && t.status === 'solved').length;
-    
+
     return {
       total, solvedMe, solvedOthers, solvedAI, missedAssign, unsolved, criticalTickets, criticalSolved
     };
@@ -2042,8 +2063,8 @@ export default function App() {
         <div className="flex-1 overflow-hidden relative">
           <Routes>
             <Route path="/" element={<Navigate to="/tickets" replace />} />
-            <Route path="/tickets" element={<TicketsPage tickets={tickets} socket={socket} navigate={navigate} currentStage={currentStageIndex} />} />
-            <Route path="/tickets/:id" element={<TicketDetailPage tickets={tickets} kb={kb} agents={agents} socket={socket} navigate={navigate} areAgentsOnline={areAgentsOnline} currentStage={currentStageIndex} aiMode={aiMode} participantParity={participantParity} />} />
+            <Route path="/tickets" element={<TicketsPage tickets={tickets} socket={socket} navigate={navigate} currentStage={currentStageIndex} participantId={participantId} />} />
+            <Route path="/tickets/:id" element={<TicketDetailPage tickets={tickets} kb={kb} agents={agents} socket={socket} navigate={navigate} areAgentsOnline={areAgentsOnline} currentStage={currentStageIndex} aiMode={aiMode} participantParity={participantParity} participantId={participantId} />} />
             <Route path="/kb" element={<KBListPage kb={kb} navigate={navigate} />} />
             <Route path="/kb/:id" element={<KBDetailPage kb={kb} navigate={navigate} />} />
             <Route path="/agents" element={
