@@ -647,6 +647,14 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
     setShowDelegationPanel(false);
   };
 
+  // Функция для быстрого взятия тикета в работу (добавьте это внутри компонента TicketDetailPage)
+  const assignToMe = () => {
+    socket.emit('ticket:status:update', { 
+      ticketId: ticket.id, 
+      newStatus: 'in Progress' 
+    });
+  };
+
   // Функция для изменения статуса тикета
   const handleStatusChange = (e) => {
     const newStatus = e.target.value;
@@ -837,17 +845,26 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
               </div>
             </div>
           ) : (
-            <div className={`flex-1 flex items-center justify-center italic p-4 text-center rounded-xl sm:rounded-2xl
+            <div className={`flex-1 flex flex-col items-center justify-center p-6 text-center rounded-xl sm:rounded-2xl border border-dashed transition-all
               ${ticket.isCritical
-                ? 'bg-gradient-to-r from-red-900/20 to-transparent border border-red-500/30 text-amber-200'
-                : ticket.isTutorial
-                  ? 'bg-gradient-to-r from-emerald-900/20 to-transparent border border-emerald-500/30 text-emerald-200'
-                  : 'text-slate-500'}`}>
-              {ticket.isCritical
-                ? '🚨 ASSIGN THIS CRITICAL TICKET (status "In Progress") TO SOLVE IMMEDIATELY!'
-                : ticket.isTutorial
-                  ? '📚 Assign this tutorial ticket to yourself (status "In Progress") to solve it.'
-                  : 'Assign ticket to yourself (status "In Progress") to solve it.'}
+                ? 'bg-red-900/10 border-red-500/30'
+                : 'bg-slate-800/30 border-slate-700'}`}>
+                
+              <div className="mb-4 text-slate-400 max-w-md">
+                {ticket.isCritical
+                  ? '🚨 This is a CRITICAL ticket. You must assign it to yourself immediately to solve it.'
+                  : 'To start working on this ticket and enable delegation options, you need to assign it to yourself.'}
+              </div>
+
+              <button
+                onClick={assignToMe}
+                className={`px-8 py-3 rounded-xl font-bold uppercase tracking-wider shadow-lg hover:scale-105 transition-all
+                  ${ticket.isCritical
+                    ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/40'
+                    : 'bg-cyan-500 hover:bg-cyan-400 text-black shadow-cyan-900/20'}`}
+              >
+                {ticket.status === 'solved' ? 'Re-open Ticket' : 'Take Ticket (In Progress)'}
+              </button>
             </div>
           )}
         </div>
@@ -1291,11 +1308,20 @@ export default function App() {
       return;
     }
 
-    // Send participant parity on initialization
-    socket.emit('request:init', {
-      participantId,
-      participantParity
-    });
+    // Выносим инициализацию в функцию
+    const initializeSession = () => {
+      console.log('🔄 Initializing session with server...');
+      socket.emit('request:init', {
+        participantId,
+        participantParity
+      });
+    };
+
+    // 1. Инициализация при первом запуске
+    initializeSession();
+
+    // 2. ВАЖНО: Повторная инициализация при переподключении (исправляет баг "статус не меняется")
+    socket.on('connect', initializeSession);
 
     socket.on('init', (data) => {
       console.log('📦 Received init data from server:', {
@@ -1391,6 +1417,7 @@ export default function App() {
     });
 
     return () => {
+      socket.off('connect', initializeSession); // Не забудьте отписаться
       socket.off('init');
       socket.off('tickets:update');
       socket.off('ticket:new');
