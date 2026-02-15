@@ -1156,8 +1156,16 @@ const FinishTutorialButton = ({ onFinish }) => {
 };
 
 // --- FINAL SCREEN WITH RESET BUTTON ---
-const FinalScreen = ({ onReset }) => {
+// --- FINAL SCREEN WITH ONLY CLEAR BUTTON ---
+const FinalScreen = () => {
+  const [clearMessage, setClearMessage] = useState('');
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  const handleClearAndClose = () => {
+    localStorage.clear();                // удаляем все сохранённые данные
+    window.close();                      // пытаемся закрыть вкладку
+    setClearMessage('All data cleared. You may now close this tab manually.');
+  };
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
@@ -1182,30 +1190,26 @@ const FinalScreen = ({ onReset }) => {
           <p>You can close this tab. All data is already saved.</p>
         </div>
 
-        <div className="space-y-3">
-          <button
-            onClick={() => window.location.reload()}
-            className="w-full bg-indigo-600 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-indigo-700 transition-colors text-sm sm:text-base min-h-[44px]"
-          >
-            Start New Experiment
-          </button>
+        <button
+          onClick={handleClearAndClose}
+          className="w-full bg-rose-600/80 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-rose-700 transition-colors text-sm sm:text-base min-h-[44px] border border-rose-500/30"
+        >
+          Close Tab
+        </button>
 
-          <button
-            onClick={onReset}
-            className="w-full bg-rose-600/80 text-white py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-rose-700 transition-colors text-sm sm:text-base min-h-[44px] border border-rose-500/30"
-          >
-            Clear All Data
-          </button>
-        </div>
+        {clearMessage && (
+          <div className="mt-4 p-3 bg-yellow-900/30 border border-yellow-500/30 rounded-xl text-yellow-200 text-sm">
+            {clearMessage}
+          </div>
+        )}
 
         <div className="mt-6 text-xs text-slate-500">
-          <p>Starting a new experiment will generate a new participant ID and clear all local data.</p>
+          <p>All local data has been cleared. You can safely close this tab.</p>
         </div>
       </div>
     </div>
   );
 };
-
 // --- MAIN APPLICATION ---
 
 export default function App() {
@@ -2085,16 +2089,7 @@ export default function App() {
       )}
 
       {/* Final screen after completing all surveys */}
-      {appState === 'FINAL' && (
-        <FinalScreen
-          onReset={() => {
-            // Очищаем все данные из localStorage
-            localStorage.clear();
-            // Перезагружаем страницу для нового эксперимента
-            window.location.reload();
-          }}
-        />
-      )}
+      {appState === 'FINAL' && <FinalScreen />}
 
       {/* Finish Tutorial Button (shown during tutorial) */}
       {appState === 'ACTIVE' && currentStageIndex === 1 && (
