@@ -1782,10 +1782,21 @@ export default function App() {
   if (appState === 'INTRO') return (
     <div className="h-screen bg-slate-950 flex items-center justify-center p-4 text-white text-center">
       <div className="max-w-xl bg-slate-900 p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-white/10">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Disclaimer</h1>
-        <p className="text-slate-400 mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base">
-          This is a scientific experiment simulating IT support work. All interactions are logged anonymously for research purposes.
-        </p>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Welcome to the Experiment</h1>
+        <div className="text-slate-400 mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base space-y-3">
+          <p>
+            Welcome to the experiment! You are invited to test a new IT support system
+            as part of a scientific study.
+          </p>
+          <p>
+            First, you will be asked to complete a short <strong>pre‑experiment survey</strong>.
+            After that, you will go through a <strong>tutorial</strong> to learn how the system works.
+            <span className="text-cyan-400"> In the tutorial, please make sure to view the instructions</span> (available via the sidebar menu).
+          </p>
+          <p>
+            All your interactions are logged anonymously and used only for research purposes.
+          </p>
+        </div>
         <button
           onClick={() => setAppState('SURVEY')}
           className="w-full bg-cyan-500 text-black py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-cyan-600 transition-colors text-sm sm:text-base min-h-[44px]"
