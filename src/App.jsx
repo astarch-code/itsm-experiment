@@ -1753,11 +1753,6 @@ export default function App() {
     }
   };
 
-  // Handle HTML viewer close
-  const handleHtmlViewerClose = () => {
-    setShowHtmlViewer(false);
-  };
-
   // Handle HTML viewer start tutorial - запускает туториал без показа инструкций
   const handleHtmlViewerStartTutorial = async () => {
     try {
@@ -1868,7 +1863,10 @@ export default function App() {
                 <FileText size={12} /> View Instructions
               </button>
               <button
-                onClick={() => setHtmlViewerConfig({ show: true, src: '/privacy.html', isTutorialMode: false })}
+                onClick={() => {
+                  setHtmlViewerConfig({ show: true, src: '/privacy.html', isTutorialMode: false });
+                  setMobileMenuOpen(false);
+                }}
                 className="w-full bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 py-2 rounded-lg text-[10px] uppercase font-black hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center gap-2"
               >
                 <FileText size={12} /> {!isSidebarCollapsed && "Contact and Privacy"}
@@ -1909,9 +1907,7 @@ export default function App() {
         </nav>
         <div className="p-4 bg-black/20 space-y-2">
           <button
-            onClick={() => {
-              { () => setHtmlViewerConfig({ show: true, src: '/instructions.html', isTutorialMode: false }) }
-            }}
+            onClick={() => setHtmlViewerConfig({ show: true, src: '/instructions.html', isTutorialMode: false })}
             className="w-full bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 py-2 rounded-lg text-[10px] uppercase font-black hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center gap-2"
           >
             <FileText size={12} /> {!isSidebarCollapsed && "View Instructions"}
