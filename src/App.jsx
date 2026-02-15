@@ -79,7 +79,7 @@ const TutorialBriefingScreen = ({ onContinue }) => {
 };
 
 // --- HTML INSTRUCTION VIEWER ---
-const HtmlViewer = ({ onClose, isTutorialMode = false, onStartTutorial }) => {
+const HtmlViewer = ({ onClose, isTutorialMode = false, onStartTutorial, src = '/instructions.html' }) => {
   const [isLoading, setIsLoading] = useState(true);
   const iframeRef = useRef(null);
 
@@ -102,7 +102,7 @@ const HtmlViewer = ({ onClose, isTutorialMode = false, onStartTutorial }) => {
           </div>
           <div className="flex items-center gap-2">
             <a
-              href={`${API_BASE_URL}/instructions.html`}
+              href={`${API_BASE_URL}${src}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600/30 border border-indigo-500/50 text-indigo-100 rounded-xl hover:bg-indigo-600 transition-colors text-sm"
@@ -131,7 +131,7 @@ const HtmlViewer = ({ onClose, isTutorialMode = false, onStartTutorial }) => {
 
           <iframe
             ref={iframeRef}
-            src={`${API_BASE_URL}/instructions.html`}
+            src={`${API_BASE_URL}${src}`}
             className="w-full h-full"
             title="System Instructions"
             onLoad={handleIframeLoad}
@@ -497,11 +497,14 @@ const MobileBottomNav = ({ activeRoute, navigate }) => {
 const TicketsPage = ({ tickets, socket, navigate, currentStage, participantId }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredTickets = tickets.filter(t =>
-    t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.status.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTickets = tickets.filter(t => {
+    // Не показываем решённые тикеты
+    if (t.status === 'solved') return false;
+    const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.status.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
 
   // Функция для изменения статуса тикета
   const handleStatusChange = (ticketId, newStatus) => {
@@ -1214,8 +1217,11 @@ export default function App() {
   const [surveyQuestions, setSurveyQuestions] = useState([]);
   const [surveyType, setSurveyType] = useState(null); // 'pre-experiment' or 'post-experiment'
   const [showTutorialBriefing, setShowTutorialBriefing] = useState(false);
-  const [showHtmlViewer, setShowHtmlViewer] = useState(false);
-  const [htmlViewerMode, setHtmlViewerMode] = useState('reference'); // 'tutorial' or 'reference'
+  const [htmlViewerConfig, setHtmlViewerConfig] = useState({
+    show: false,
+    src: '/instructions.html',
+    isTutorialMode: false
+  });
   const [isLoadingParticipant, setIsLoadingParticipant] = useState(true);
 
   const [tickets, setTickets] = useState([]);
@@ -1809,11 +1815,12 @@ export default function App() {
       )}
 
       {/* HTML Instruction Viewer */}
-      {showHtmlViewer && (
+      {htmlViewerConfig.show && (
         <HtmlViewer
-          onClose={handleHtmlViewerClose}
-          isTutorialMode={htmlViewerMode === 'tutorial'}
-          onStartTutorial={htmlViewerMode === 'tutorial' ? handleHtmlViewerStartTutorial : null}
+          src={htmlViewerConfig.src}
+          onClose={() => setHtmlViewerConfig({ ...htmlViewerConfig, show: false })}
+          isTutorialMode={htmlViewerConfig.isTutorialMode}
+          onStartTutorial={htmlViewerConfig.isTutorialMode ? handleHtmlViewerStartTutorial : null}
         />
       )}
 
@@ -1853,13 +1860,18 @@ export default function App() {
             <div className="p-4 bg-black/20 space-y-2">
               <button
                 onClick={() => {
-                  setHtmlViewerMode('reference');
-                  setShowHtmlViewer(true);
+                  setHtmlViewerConfig({ show: true, src: '/instructions.html', isTutorialMode: false })
                   setMobileMenuOpen(false);
                 }}
                 className="w-full bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 py-2 rounded-lg text-[10px] uppercase font-black hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center gap-2"
               >
                 <FileText size={12} /> View Instructions
+              </button>
+              <button
+                onClick={() => setHtmlViewerConfig({ show: true, src: '/privacy.html', isTutorialMode: false })}
+                className="w-full bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 py-2 rounded-lg text-[10px] uppercase font-black hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center gap-2"
+              >
+                <FileText size={12} /> {!isSidebarCollapsed && "Contact and Privacy"}
               </button>
               <button
                 onClick={forceFinishShift}
@@ -1898,12 +1910,20 @@ export default function App() {
         <div className="p-4 bg-black/20 space-y-2">
           <button
             onClick={() => {
-              setHtmlViewerMode('reference');
-              setShowHtmlViewer(true);
+              { () => setHtmlViewerConfig({ show: true, src: '/instructions.html', isTutorialMode: false }) }
             }}
             className="w-full bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 py-2 rounded-lg text-[10px] uppercase font-black hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center gap-2"
           >
             <FileText size={12} /> {!isSidebarCollapsed && "View Instructions"}
+          </button>
+          <button
+            onClick={() => {
+              setHtmlViewerConfig({ show: true, src: '/privacy.html', isTutorialMode: false });
+              setMobileMenuOpen(false);
+            }}
+            className="w-full bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 py-2 rounded-lg text-[10px] uppercase font-black hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center gap-2"
+          >
+            <FileText size={12} /> Contact and Privacy
           </button>
           <button
             onClick={forceFinishShift}
