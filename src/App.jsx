@@ -1779,11 +1779,15 @@ export default function App() {
     );
   }
 
+  // Inside App.jsx, replace the intro screen (appState === 'INTRO') with:
+
   if (appState === 'INTRO') return (
-    <div className="h-screen bg-slate-950 flex items-center justify-center p-4 text-white text-center">
-      <div className="max-w-xl bg-slate-900 p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-white/10">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Welcome to the Experiment</h1>
-        <div className="text-slate-400 mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base space-y-3">
+    <div className="h-screen bg-slate-950 flex items-center justify-center p-4 text-white">
+      <div className="max-w-4xl w-full bg-slate-900 p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-white/10 max-h-[90vh] flex flex-col">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-center">Welcome to the Experiment</h1>
+
+        {/* Scrollable instruction area */}
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4 text-slate-300 text-sm sm:text-base">
           <p>
             Welcome to the experiment! You are invited to test a new IT support system
             as part of a scientific study at TU Darmstadt.
@@ -1795,11 +1799,269 @@ export default function App() {
           </p>
           <p>
             All your interactions are logged anonymously and used only for research purposes.
+
+            DO NOT REFRESH THE PAGE DURING THE EXPERIMENT!
+
+            IF YOU REFRESEHED THE PAGE, PLEASE START THE EXPERIMENT AGAIN
+
           </p>
+
+          {/* --- Embedded Instructions (converted from instructions.html) --- */}
+          <div className="mt-6 space-y-6 border-t border-white/10 pt-6">
+            <h2 className="text-2xl font-bold text-cyan-400">Experiment Instructions</h2>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-cyan-300">🧪 Experiment Overview</h3>
+              <p>You are taking part in a scientific study simulating an IT support helpdesk. Your task is to handle incoming tickets from users, find solutions, and close them.</p>
+              <p>You will be randomly assigned to one of two groups based on your participant number:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><strong>Even-numbered participants</strong> work with an <strong>AI assistant</strong> (you can ask for advice, or the AI may work autonomously depending on the mode).</li>
+                <li><strong>Odd-numbered participants</strong> work in a <strong>team</strong> with simulated colleagues (bots) to whom you can delegate tickets.</li>
+              </ul>
+              <p>All your actions are logged anonymously and used only for research.</p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-cyan-300">📅 Experiment Flow</h3>
+              <ol className="list-decimal pl-5 space-y-1">
+                <li><strong>Pre‑experiment survey</strong> – a few questions about yourself.</li>
+                <li><strong>Tutorial (Stage 1)</strong> – learn the interface, no time limit.</li>
+                <li><strong>Main experiment (Stage 2)</strong> – 10‑minute shift with real tickets and deadlines.</li>
+                <li><strong>Post‑experiment survey</strong> – questions about your experience.</li>
+                <li><strong>Final screen</strong> – confirmation that your data has been saved.</li>
+              </ol>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-cyan-300">📋 Step 0: Pre‑experiment Survey</h3>
+              <p>After clicking “Next” on this screen, you will see a survey form.</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Answer all required questions (marked with <span className="text-red-400">*</span>).</li>
+                <li>For multiple‑choice questions, click the option you want.</li>
+                <li>For text questions, type your answer in the box.</li>
+                <li>Click <span className="inline-block bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 text-xs">Complete Survey</span> when finished.</li>
+              </ul>
+              <p>Your answers will be saved anonymously. After submitting, you will see the <strong>Tutorial Briefing</strong> screen.</p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-cyan-300">🎓 Tutorial Briefing</h3>
+              <p>You will see a screen explaining that you are about to start the tutorial. It reminds you that you can always open these instructions by clicking the <strong>instruction button</strong> in the sidebar (or mobile menu).</p>
+              <p>Click <span className="inline-block bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 text-xs">Start Tutorial</span> to begin.</p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-cyan-300">🖥️ Tutorial – Interface Guide</h3>
+              <p>During the tutorial, you can explore without any time pressure. Here’s what you’ll see:</p>
+
+              <div className="pl-4 space-y-3">
+                <h4 className="text-lg font-medium text-cyan-200">Sidebar / Mobile Menu</h4>
+                <p>On the left (or bottom on mobile) you have navigation:</p>
+                <ul className="list-disc pl-5">
+                  <li><span className="inline-block bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 text-xs">Tickets</span> – list of all incoming tickets.</li>
+                  <li><span className="inline-block bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 text-xs">Knowledge Base</span> – articles with solutions.</li>
+                  <li><span className="inline-block bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 text-xs">Colleagues</span> – list of team members (offline during tutorial).</li>
+                  <li><span className="inline-block bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 text-xs">View Instructions</span> – re‑opens this guide.</li>
+                </ul>
+              </div>
+
+              <div className="pl-4 space-y-3">
+                <h4 className="text-lg font-medium text-cyan-200">Ticket List</h4>
+                <p>Each ticket shows:</p>
+                <ul className="list-disc pl-5">
+                  <li><strong>Title</strong> and short description.</li>
+                  <li><strong>Status</strong> – <span className="px-2 py-0.5 bg-slate-600/30 text-slate-300 rounded text-xs">Free</span> (not assigned), <span className="px-2 py-0.5 bg-cyan-600/30 text-cyan-300 rounded text-xs">In Progress</span> (assigned to you), <span className="px-2 py-0.5 bg-green-600/30 text-green-300 rounded text-xs">Solved</span>.</li>
+                  <li><strong>Timer</strong> – for normal tickets shows time left to assign/solve. Tutorial tickets have “No time limit”.</li>
+                  <li><strong>Critical tickets</strong> have a red background and a 🚨 icon.</li>
+                  <li><strong>Tutorial tickets</strong> have a greenish background and a 📚 icon.</li>
+                </ul>
+                <p>Click any ticket to open its details.</p>
+              </div>
+
+              <div className="pl-4 space-y-3">
+                <h4 className="text-lg font-medium text-cyan-200">Ticket Detail View</h4>
+                <p>Here you can:</p>
+                <ul className="list-disc pl-5">
+                  <li>Read the full description and message history.</li>
+                  <li>Change the ticket status using the dropdown at the bottom (or in the list).</li>
+                  <li>If the ticket is assigned to you (<span className="px-2 py-0.5 bg-cyan-600/30 text-cyan-300 rounded text-xs">In Progress</span>), a text area appears where you can type your solution.</li>
+                  <li>You can also attach a Knowledge Base article from the dropdown.</li>
+                  <li>Click <span className="inline-block bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 text-xs">Complete</span> to submit your solution.</li>
+                </ul>
+              </div>
+
+              <div className="pl-4 space-y-3">
+                <h4 className="text-lg font-medium text-cyan-200">Knowledge Base</h4>
+                <p>Contains articles with IDs like <code className="bg-slate-800 px-1 py-0.5 rounded text-xs">kb_101</code>. Click an article to read it. You can search by keywords.</p>
+                <p>In the ticket detail, after typing a solution, select the relevant article ID from the dropdown. This improves the chance that the client accepts the solution.</p>
+              </div>
+
+              <div className="pl-4 space-y-3">
+                <h4 className="text-lg font-medium text-cyan-200">Colleagues Page</h4>
+                <p>During the tutorial all colleagues are offline. In the main experiment, their status will change (online/away) if you are in the team group.</p>
+              </div>
+
+              <div className="p-3 bg-yellow-900/30 border border-yellow-500/30 rounded text-yellow-200">
+                <strong>Tutorial task:</strong> Try to take a tutorial ticket, change its status to “In Progress”, then write a dummy solution, attach any KB article, and click “Complete”. You will see a success message.
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-cyan-300">✅ Finishing the Tutorial</h3>
+              <p>When you feel comfortable with the interface, click the <strong>“Finish Tutorial”</strong> button (floating at the bottom right).</p>
+              <p>A confirmation will be sent to the server, and you will be taken to the briefing for <strong>Stage 2</strong>.</p>
+              <div className="p-3 bg-red-900/30 border border-red-500/30 rounded text-red-200">
+                Important: All tutorial tickets will be removed, and the real experiment begins.
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-cyan-300">🚀 Stage 2 Briefing</h3>
+              <p>You will see a screen showing your group and a description of what to expect.</p>
+              <ul className="list-disc pl-5">
+                <li>If you are <strong>even</strong> (AI group), you will be asked to select an <strong>AI mode</strong>:
+                  <ul className="list-circle pl-5">
+                    <li><strong>Normal mode:</strong> AI gives advice only when you click “Ask AI”.</li>
+                    <li><strong>Autonomous mode:</strong> AI may take tickets and try to solve them on its own (it may skip or fail).</li>
+                  </ul>
+                </li>
+                <li>If you are <strong>odd</strong> (team group), you will see information about your colleagues. They are online at the start and can change status during the shift.</li>
+              </ul>
+              <p>Click <span className="inline-block bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 text-xs">Start Experiment</span> to begin the 10‑minute shift.</p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-cyan-300">⏳ During the Main Experiment (Stage 2)</h3>
+              <p>The shift lasts exactly <strong>10 minutes</strong>. A timer at the top of the screen shows the remaining time. When it reaches zero, the shift ends automatically and you will see the summary.</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-800/50 rounded border border-white/10">
+                  <h4 className="text-cyan-200 font-bold mb-2">🎫 Tickets</h4>
+                  <p>New tickets arrive automatically. They have strict deadlines:</p>
+                  <ul className="list-disc pl-5 text-sm">
+                    <li><strong>Normal tickets:</strong> 2 min to assign, 5 min to solve.</li>
+                    <li><strong>Critical tickets (🚨):</strong> 1 min to assign, 2 min to solve.</li>
+                  </ul>
+                  <p className="mt-2">If you miss a deadline, you will receive a warning notification and the client may become unhappy.</p>
+                </div>
+                <div className="p-4 bg-slate-800/50 rounded border border-white/10">
+                  <h4 className="text-cyan-200 font-bold mb-2">⏱️ Timers</h4>
+                  <p>Each ticket shows a countdown. Colour codes:</p>
+                  <ul className="list-disc pl-5 text-sm">
+                    <li><span className="text-slate-400">Grey</span> – plenty of time.</li>
+                    <li><span className="text-amber-400">Amber</span> – less than 30 seconds left.</li>
+                    <li><span className="text-red-400">Red</span> – overdue.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-lg font-medium text-cyan-200">For AI Group (even participants)</h4>
+                <ul className="list-disc pl-5">
+                  <li>In <strong>normal mode</strong>, when viewing a ticket assigned to you, you will see an <span className="inline-block bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 text-xs">Ask AI</span> button. Click it to get advice. The AI may suggest a KB article.</li>
+                  <li>In <strong>autonomous mode</strong>, the AI will automatically take some tickets and attempt to solve them. You will see notifications like “AI took ticket…”, “AI solved…”, “AI failed…”. You can still work on tickets yourself.</li>
+                  <li>You can change the AI mode during the shift by clicking the <span className="inline-block bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 text-xs">AI Mode: Normal/Autonomous</span> button in the top bar.</li>
+                </ul>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-lg font-medium text-cyan-200">For Team Group (odd participants)</h4>
+                <ul className="list-disc pl-5">
+                  <li>Colleagues (bots) appear on the <strong>Colleagues</strong> page. Their status may change between <span className="text-green-400">online</span> and <span className="text-amber-400">away</span> during the shift.</li>
+                  <li>To delegate a ticket, open its detail and make sure it is assigned to you (<span className="px-2 py-0.5 bg-cyan-600/30 text-cyan-300 rounded text-xs">In Progress</span>). Then click the <span className="inline-block bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 text-xs">Team</span> button (mobile) or use the delegation panel on the right (desktop).</li>
+                  <li>Select a colleague who is online. They may accept or refuse. If they accept, they will solve it after some time (faster for critical tickets).</li>
+                  <li>You will receive notifications about the outcome.</li>
+                </ul>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-lg font-medium text-cyan-200">Critical Tickets (🚨)</h4>
+                <p>These are urgent and appear mainly in the second half of the shift. They have a red background and flashing icons.</p>
+                <ul className="list-disc pl-5">
+                  <li>Assign and solve them as fast as possible.</li>
+                  <li>If you are in the team group, colleagues have a very high chance of failing critical tickets (99% fail). So it’s better to handle them yourself.</li>
+                  <li>If you are in the AI group, the autonomous AI also has a high miss/fail rate for critical tickets – your intervention is crucial.</li>
+                </ul>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-lg font-medium text-cyan-200">Solving a Ticket</h4>
+                <ol className="list-decimal pl-5">
+                  <li>Assign it to yourself (status “In Progress”).</li>
+                  <li>Read the description and check the Knowledge Base for relevant articles.</li>
+                  <li>In the ticket detail, write your solution in the text area.</li>
+                  <li>Select the ID of the KB article you used (if any).</li>
+                  <li>Click <span className="inline-block bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 text-xs">Complete</span>.</li>
+                </ol>
+                <p>After a short delay, the client will react. If your solution matches the KB article or is detailed enough, the ticket will be marked solved. Otherwise, it may be returned to “In Progress” with a negative comment.</p>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-lg font-medium text-cyan-200">Notifications</h4>
+                <p>Toast notifications appear in the top‑right corner. They inform you about:</p>
+                <ul className="list-disc pl-5">
+                  <li>New tickets (especially critical ones).</li>
+                  <li>AI actions (advice given, tickets taken, solved, failed).</li>
+                  <li>Bot delegation results.</li>
+                  <li>Deadline warnings.</li>
+                  <li>Client satisfaction/dissatisfaction.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-cyan-300">📊 Shift Summary</h3>
+              <p>When time runs out, you will see a summary screen with statistics:</p>
+              <ul className="list-disc pl-5">
+                <li>Total tickets, solved by you, solved by AI/colleagues, missed, in progress.</li>
+                <li>Number of critical tickets and how many were resolved.</li>
+              </ul>
+              <p>Click <span className="inline-block bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 text-xs">Next Stage</span> (or “Complete Experiment” after stage 2).</p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-cyan-300">📝 Post‑experiment Survey</h3>
+              <p>After stage 2, you will be asked to complete a final survey. The questions depend on your group (AI or team). Answer honestly – this helps our research.</p>
+              <p>Once submitted, you will see the final screen.</p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-cyan-300">🎉 Experiment Completed</h3>
+              <p>Thank you! Your data has been saved. You can close the tab.</p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-cyan-300">💡 General Tips</h3>
+              <ul className="list-disc pl-5">
+                <li>Always check the <strong>Knowledge Base</strong> – using the right article increases success.</li>
+                <li>Keep an eye on timers – especially for critical tickets.</li>
+                <li>If you are in the team group, delegate only when you are sure the colleague is online.</li>
+                <li>If you are in the AI group, use the “Ask AI” button when stuck.</li>
+                <li>You can open these instructions at any time via the sidebar button.</li>
+                <li>On mobile, use the bottom navigation and the menu button (top‑left) to access instructions and other pages.</li>
+              </ul>
+            </div>
+
+            <div className="p-3 bg-red-900/30 border border-red-500/30 rounded text-red-200">
+              <h4 className="font-bold mb-1">⚠️ Troubleshooting</h4>
+              <ul className="list-disc pl-5">
+                <li>If the interface seems stuck, try refreshing the page. Your participant ID is saved in your browser.</li>
+                <li>If you don’t see any tickets after starting stage 2, wait a few seconds – they spawn automatically.</li>
+                <li>If notifications don’t appear, check that your browser allows notifications or pop‑ups.</li>
+                <li>For any technical issues, contact the experiment administrator.</li>
+              </ul>
+            </div>
+
+            <div className="text-center text-slate-500 text-sm border-t border-white/10 pt-4">
+              Thank you for participating! Your contribution is highly valuable.
+            </div>
+          </div>
+          {/* --- End of embedded instructions --- */}
         </div>
+
         <button
           onClick={() => setAppState('SURVEY')}
-          className="w-full bg-cyan-500 text-black py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-cyan-600 transition-colors text-sm sm:text-base min-h-[44px]"
+          className="mt-6 w-full bg-cyan-500 text-black py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-cyan-600 transition-colors text-sm sm:text-base min-h-[44px]"
         >
           Next
         </button>
