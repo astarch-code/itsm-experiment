@@ -1936,12 +1936,12 @@ export default function App() {
           >
             <FileText size={12} /> Contact and Privacy
           </button>
-          <button
+          {/* <button
             onClick={forceFinishShift}
             className="w-full bg-amber-500/10 text-amber-500 border border-amber-500/20 py-2 rounded-lg text-[10px] uppercase font-black hover:bg-amber-500 hover:text-black transition-all"
           >
             {!isSidebarCollapsed && "DEBUG: End"}
-          </button>
+          </button> */}
           <button
             onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
             className="w-full py-2 flex justify-center text-slate-600 hover:text-white"
