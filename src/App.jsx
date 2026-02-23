@@ -1801,7 +1801,7 @@ export default function App() {
             All your interactions are logged anonymously and used only for research purposes.
           </p>
           <p>
-            DO NOT REFRESH THE PAGE DURING THE EXPERIMENT!
+            DO NOT REFRESH THE PAGE DURING THE EXPERIMENT AND DO NOT BROWSER BUTTONS BACK AND FORWARND!
 
             IF YOU REFRESEHED THE PAGE, PLEASE START THE EXPERIMENT AGAIN
 
@@ -1813,7 +1813,7 @@ export default function App() {
 
             <div className="space-y-4">
               <h3 className="text-xl font-semibold text-cyan-300">🧪 Experiment Overview</h3>
-              <p>You are taking part in a scientific study simulating an IT support helpdesk. Your task is to handle incoming tickets from users, find solutions, and close them.</p>
+              <p>You are taking part in a scientific study simulating an IT support helpdesk. Your task is to handle incoming tickets (tasks) from users, find solutions, and close them.</p>
               <p>You will be randomly assigned to one of two groups based on your participant number:</p>
               <ul className="list-disc pl-5 space-y-1">
                 <li><strong>Even-numbered participants</strong> work with an <strong>AI assistant</strong> (you can ask for advice, or the AI may work autonomously depending on the mode).</li>
