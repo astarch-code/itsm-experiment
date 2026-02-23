@@ -1886,12 +1886,12 @@ export default function App() {
               >
                 <FileText size={12} /> {!isSidebarCollapsed && "Contact and Privacy"}
               </button>
-              <button
+              {/* <button
                 onClick={forceFinishShift}
                 className="w-full bg-amber-500/10 text-amber-500 border border-amber-500/20 py-2 rounded-lg text-[10px] uppercase font-black hover:bg-amber-500 hover:text-black transition-all"
               >
                 DEBUG: End Shift
-              </button>
+              </button> */}
             </div>
           </div>
         </div>
