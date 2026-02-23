@@ -1940,8 +1940,8 @@ export default function App() {
                   <h4 className="text-cyan-200 font-bold mb-2">🎫 Tickets</h4>
                   <p>New tickets arrive automatically. They have strict deadlines:</p>
                   <ul className="list-disc pl-5 text-sm">
-                    <li><strong>Normal tickets:</strong> 2 min to assign, 5 min to solve.</li>
-                    <li><strong>Critical tickets (🚨):</strong> 1 min to assign, 2 min to solve.</li>
+                    <li><strong>Normal tickets:</strong> 2 min to assign, 3 min to solve.</li>
+                    <li><strong>Critical tickets (🚨):</strong> 1 min to assign, 1 min to solve.</li>
                   </ul>
                   <p className="mt-2">If you miss a deadline, you will receive a warning notification and the client may become unhappy.</p>
                 </div>
