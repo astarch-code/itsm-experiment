@@ -597,7 +597,7 @@ const TicketsPage = ({ tickets, socket, navigate, currentStage, participantId })
                   >
                     <option value="not assigned">Free</option>
                     <option value="in Progress">In Progress</option>
-                    <option value="solved">Solved</option>
+                    {/* <option value="solved">Solved</option> */}
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
