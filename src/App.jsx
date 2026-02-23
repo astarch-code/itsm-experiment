@@ -1786,7 +1786,7 @@ export default function App() {
         <div className="text-slate-400 mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base space-y-3">
           <p>
             Welcome to the experiment! You are invited to test a new IT support system
-            as part of a scientific study.
+            as part of a scientific study at TU Darmstadt.
           </p>
           <p>
             First, you will be asked to complete a short <strong>pre‑experiment survey</strong>.
