@@ -1799,7 +1799,8 @@ export default function App() {
           </p>
           <p>
             All your interactions are logged anonymously and used only for research purposes.
-
+          </p>
+          <p>
             DO NOT REFRESH THE PAGE DURING THE EXPERIMENT!
 
             IF YOU REFRESEHED THE PAGE, PLEASE START THE EXPERIMENT AGAIN
