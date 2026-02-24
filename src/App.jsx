@@ -1779,7 +1779,6 @@ export default function App() {
     );
   }
 
-  // Inside App.jsx, replace the intro screen (appState === 'INTRO') with:
 
   if (appState === 'INTRO') return (
     <div className="h-screen bg-slate-950 flex items-center justify-center p-4 text-white">
@@ -2058,6 +2057,40 @@ export default function App() {
             </div>
           </div>
           {/* --- End of embedded instructions --- */}
+        </div>
+        <div>
+          {/* -- Embedded privacy --- */}
+          <div class="container">
+            <div class="header">
+              <h1>Privacy & Contact</h1>
+              <p>Information about data handling and how to reach us</p>
+            </div>
+
+            <div class="section">
+              <h2>📬 Contact</h2>
+              <div class="contact-item">
+                <strong>Email:</strong> <a href="mailto:alexander.starchenkov@stud.tu-darmstadt.de">alexander.starchenkov@stud.tu-darmstadt.de</a>
+              </div>
+              <p>If you have any questions about the experiment or your participation, feel free to write to this address.</p>
+            </div>
+
+            <div class="section">
+              <h2>⚙️ Technical hosting</h2>
+              <div class="contact-item">
+                <strong>Platform:</strong> <a href="https://render.com" target="_blank">render.com</a>
+              </div>
+              <p>This web application is powered by <strong>Render</strong>. All collected data (survey responses, ticket actions, participant IDs) is stored securely on servers provided by Render.</p>
+              <p>Render’s infrastructure is GDPR‑compliant and uses industry‑standard security measures. For more details about how Render handles data, please visit their privacy policy:</p>
+              <p style="margin-top: 10px;">🔗 <a href="https://render.com/privacy" target="_blank">https://render.com/privacy</a></p>
+            </div>
+
+            <div class="section">
+              <h2>🔐 Data usage</h2>
+              <p>All data collected during this experiment is used exclusively for scientific research. It is stored anonymously and will never be shared with third parties. Your participant ID is a random UUID that cannot be linked to your identity.</p>
+              <p>By proceeding with the experiment, you consent to the collection and storage of your anonymous data as described.</p>
+            </div>
+          </div>
+        {/* --- End of embedded privacy --- */}
         </div>
 
         <button
