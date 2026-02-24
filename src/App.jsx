@@ -2052,47 +2052,74 @@ export default function App() {
               </ul>
             </div>
 
-            <div className="text-center text-slate-500 text-sm border-t border-white/10 pt-4">
-              Thank you for participating! Your contribution is highly valuable.
+            {/* Privacy & Contact Section */}
+            <div className="mt-8 space-y-6 border-t border-white/10 pt-6">
+              <h2 className="text-2xl font-bold text-indigo-400">Privacy & Contact</h2>
+              <p className="text-slate-400">Information about data handling and how to reach us</p>
+
+              <div className="space-y-4">
+                <div className="bg-slate-800/50 p-4 rounded-xl border border-indigo-500/20">
+                  <h3 className="text-xl font-semibold text-indigo-300 flex items-center gap-2">
+                    <span>📬</span> Contact
+                  </h3>
+                  <div className="mt-3 space-y-2">
+                    <p className="text-sm">
+                      <strong className="text-indigo-400">Email:</strong>{' '}
+                      <a href="mailto:alexander.starchenkov@stud.tu-darmstadt.de" className="text-cyan-400 hover:underline">
+                        alexander.starchenkov@stud.tu-darmstadt.de
+                      </a>
+                    </p>
+                    <p className="text-sm text-slate-300">
+                      If you have any questions about the experiment or your participation, feel free to write to this address.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-800/50 p-4 rounded-xl border border-indigo-500/20">
+                  <h3 className="text-xl font-semibold text-indigo-300 flex items-center gap-2">
+                    <span>⚙️</span> Technical hosting
+                  </h3>
+                  <div className="mt-3 space-y-2">
+                    <p className="text-sm">
+                      <strong className="text-indigo-400">Platform:</strong>{' '}
+                      <a href="https://render.com" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">
+                        render.com
+                      </a>
+                    </p>
+                    <p className="text-sm text-slate-300">
+                      This web application is powered by <strong>Render</strong>. All collected data (survey responses, ticket actions, participant IDs) is stored securely on servers provided by Render.
+                    </p>
+                    <p className="text-sm text-slate-300">
+                      Render’s infrastructure is GDPR‑compliant and uses industry‑standard security measures. For more details about how Render handles data, please visit their privacy policy:
+                    </p>
+                    <p className="text-sm">
+                      🔗 <a href="https://render.com/privacy" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">https://render.com/privacy</a>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-800/50 p-4 rounded-xl border border-indigo-500/20">
+                  <h3 className="text-xl font-semibold text-indigo-300 flex items-center gap-2">
+                    <span>🔐</span> Data usage
+                  </h3>
+                  <div className="mt-3 space-y-2">
+                    <p className="text-sm text-slate-300">
+                      All data collected during this experiment is used exclusively for scientific research. It is stored anonymously and will never be shared with third parties. Your participant ID is a random UUID that cannot be linked to your identity.
+                    </p>
+                    <p className="text-sm text-slate-300">
+                      By proceeding with the experiment, you consent to the collection and storage of your anonymous data as described.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center text-slate-500 text-sm border-t border-white/10 pt-4">
+                Thank you for participating! Your contribution is highly valuable.
+              </div>
             </div>
           </div>
           {/* --- End of embedded instructions --- */}
         </div>
-        <div>
-          {/* -- Embedded privacy --- */}
-          <div class="container">
-            <div class="header">
-              <h1>Privacy & Contact</h1>
-              <p>Information about data handling and how to reach us</p>
-            </div>
-
-            <div class="section">
-              <h2>📬 Contact</h2>
-              <div class="contact-item">
-                <strong>Email:</strong> <a href="mailto:alexander.starchenkov@stud.tu-darmstadt.de">alexander.starchenkov@stud.tu-darmstadt.de</a>
-              </div>
-              <p>If you have any questions about the experiment or your participation, feel free to write to this address.</p>
-            </div>
-
-            <div class="section">
-              <h2>⚙️ Technical hosting</h2>
-              <div class="contact-item">
-                <strong>Platform:</strong> <a href="https://render.com" target="_blank">render.com</a>
-              </div>
-              <p>This web application is powered by <strong>Render</strong>. All collected data (survey responses, ticket actions, participant IDs) is stored securely on servers provided by Render.</p>
-              <p>Render’s infrastructure is GDPR‑compliant and uses industry‑standard security measures. For more details about how Render handles data, please visit their privacy policy:</p>
-              <p style="margin-top: 10px;">🔗 <a href="https://render.com/privacy" target="_blank">https://render.com/privacy</a></p>
-            </div>
-
-            <div class="section">
-              <h2>🔐 Data usage</h2>
-              <p>All data collected during this experiment is used exclusively for scientific research. It is stored anonymously and will never be shared with third parties. Your participant ID is a random UUID that cannot be linked to your identity.</p>
-              <p>By proceeding with the experiment, you consent to the collection and storage of your anonymous data as described.</p>
-            </div>
-          </div>
-        {/* --- End of embedded privacy --- */}
-        </div>
-
         <button
           onClick={() => setAppState('SURVEY')}
           className="mt-6 w-full bg-cyan-500 text-black py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-cyan-600 transition-colors text-sm sm:text-base min-h-[44px]"
