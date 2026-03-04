@@ -1905,6 +1905,7 @@ export default function App() {
                 <li><strong>Odd participant number:</strong> Work with <strong>bot colleagues</strong>.</li>
               </ul>
               <p>All actions are logged anonymously.</p>
+              <p>More detailed instructions will be available in the tutorial and throughout the experiment.</p>
               <p>
                 DO NOT REFRESH THE PAGE DURING THE EXPERIMENT AND DO NOT BROWSER BUTTONS BACK AND FORWARND!
                 IF YOU REFRESEHED THE PAGE, PLEASE START THE EXPERIMENT AGAIN
@@ -1970,9 +1971,6 @@ export default function App() {
                 <li><strong>Normal Mode:</strong> Use <span className="button-demo">Ask AI</span> for advice.</li>
                 <li><strong>Autonomous Mode:</strong> AI may take tickets automatically.</li>
               </ul>
-              <div className="note">
-                AI performs poorly on critical tickets. Monitor them carefully.
-              </div>
             </div>
 
             <div className="section">
@@ -1981,9 +1979,6 @@ export default function App() {
                 <li>Colleagues may be online or away.</li>
                 <li>Delegate only when ticket is assigned to you.</li>
               </ul>
-              <div className="note">
-                Colleagues almost always fail critical tickets. Handle them yourself.
-              </div>
             </div>
 
             <div className="section">
@@ -1995,7 +1990,6 @@ export default function App() {
             <div className="section">
               <h2>⚠ Troubleshooting</h2>
               <ul>
-                <li>Refresh page if stuck.</li>
                 <li>Wait a few seconds for tickets to appear.</li>
                 <li>Enable browser notifications.</li>
               </ul>
