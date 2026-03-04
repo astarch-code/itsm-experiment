@@ -1788,23 +1788,10 @@ export default function App() {
       {/* Scrollable instruction area */}
       <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4 text-slate-300 text-sm sm:text-base">
         <p>
-          Welcome to the experiment! You are invited to test a new IT support system
-          as part of a scientific study at TU Darmstadt.
-        </p>
-        <p>
-          First, you will be asked to complete a short <strong>pre‑experiment survey</strong>.
-          After that, you will go through a <strong>tutorial</strong> to learn how the system works.
-          <span className="text-cyan-400"> In the tutorial, please make sure to view the instructions</span> (available via the sidebar menu).
-        </p>
-        <p>
-          All your interactions are logged anonymously and used only for research purposes.
-        </p>
-        <p>
           DO NOT REFRESH THE PAGE DURING THE EXPERIMENT AND DO NOT BROWSER BUTTONS BACK AND FORWARND!
           IF YOU REFRESEHED THE PAGE, PLEASE START THE EXPERIMENT AGAIN
         </p>
 
-        {/* Инструкции из preview.html */}
         <style>{`
           * {
             margin: 0;
@@ -1914,6 +1901,7 @@ export default function App() {
           </div>
 
           <div className="section">
+
             <h2>🧪 Overview</h2>
             <p>You will simulate an IT support helpdesk by handling incoming tickets.</p>
             <ul>
