@@ -1780,19 +1780,15 @@ export default function App() {
   }
 
 
- if (appState === 'INTRO') return (
-  <div className="h-screen bg-slate-950 flex items-center justify-center p-4 text-white">
-    <div className="max-w-4xl w-full bg-slate-900 p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-white/10 max-h-[90vh] flex flex-col">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-center">Welcome to the Experiment</h1>
+  if (appState === 'INTRO') return (
+    <div className="h-screen bg-slate-950 flex items-center justify-center p-4 text-white">
+      <div className="max-w-4xl w-full bg-slate-900 p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-white/10 max-h-[90vh] flex flex-col">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-center">Welcome to the Experiment</h1>
 
-      {/* Scrollable instruction area */}
-      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4 text-slate-300 text-sm sm:text-base">
-        <p>
-          DO NOT REFRESH THE PAGE DURING THE EXPERIMENT AND DO NOT BROWSER BUTTONS BACK AND FORWARND!
-          IF YOU REFRESEHED THE PAGE, PLEASE START THE EXPERIMENT AGAIN
-        </p>
+        {/* Scrollable instruction area */}
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4 text-slate-300 text-sm sm:text-base">
 
-        <style>{`
+          <style>{`
           * {
             margin: 0;
             padding: 0;
@@ -1894,124 +1890,128 @@ export default function App() {
           }
         `}</style>
 
-        <div className="container">
-          <div className="header">
-            <h1>Experiment Instructions</h1>
-            <p>Short guide – please read before starting.</p>
-          </div>
-
-          <div className="section">
-
-            <h2>🧪 Overview</h2>
-            <p>You will simulate an IT support helpdesk by handling incoming tickets.</p>
-            <ul>
-              <li><strong>Even participant number:</strong> Work with an <strong>AI assistant</strong>.</li>
-              <li><strong>Odd participant number:</strong> Work with <strong>bot colleagues</strong>.</li>
-            </ul>
-            <p>All actions are logged anonymously.</p>
-          </div>
-
-          <div className="section">
-            <h2>📅 Experiment Flow</h2>
-            <ol>
-              <li>Pre‑experiment survey</li>
-              <li>Tutorial (no time limit)</li>
-              <li>Main experiment (10 minutes)</li>
-              <li>Post‑experiment survey</li>
-              <li>Completion screen</li>
-            </ol>
-          </div>
-
-          <div className="section">
-            <h2>🎓 Tutorial</h2>
-            <p>Explore the interface freely.</p>
-            <ul>
-              <li><span className="button-demo">Tickets</span> – incoming tickets</li>
-              <li><span className="button-demo">Knowledge Base</span> – solution articles (e.g. kb_101)</li>
-              <li><span className="button-demo">Colleagues</span> – team members</li>
-            </ul>
-
-            <p><strong>Status types:</strong></p>
-            <ul>
-              <li><span className="status-badge status-free">Free</span></li>
-              <li><span className="status-badge status-progress">In Progress</span></li>
-              <li><span className="status-badge status-solved">Solved</span></li>
-            </ul>
-
-            <p>To solve a ticket:</p>
-            <ol>
-              <li>Assign it to yourself</li>
-              <li>Read description</li>
-              <li>Check Knowledge Base</li>
-              <li>Write solution</li>
-              <li>Select article ID</li>
-              <li>Click <span className="button-demo">Complete</span></li>
-            </ol>
-
-            <div className="warning">
-              After clicking <strong>Finish Tutorial</strong>, the real experiment begins.
+          <div className="container">
+            <div className="header">
+              <h1>Experiment Instructions</h1>
+              <p>Short guide – please read before starting.</p>
             </div>
-          </div>
 
-          <div className="section">
-            <h2>⏳ Main Experiment (10 Minutes)</h2>
-            <p>Tickets appear automatically. Watch the timer.</p>
-            <p><strong>Deadlines:</strong></p>
-            <ul>
-              <li>Normal: 2 min assign / 3 min solve</li>
-              <li>Critical: 1 min assign / 1 min solve</li>
-            </ul>
-            <p>Critical tickets (🚨) require immediate attention.</p>
-          </div>
+            <div className="section">
 
-          <div className="section">
-            <h2>🤖 AI Group</h2>
-            <ul>
-              <li><strong>Normal Mode:</strong> Use <span className="button-demo">Ask AI</span> for advice.</li>
-              <li><strong>Autonomous Mode:</strong> AI may take tickets automatically.</li>
-            </ul>
-            <div className="note">
-              AI performs poorly on critical tickets. Monitor them carefully.
+              <h2>🧪 Overview</h2>
+              <p>You will simulate an IT support helpdesk by handling incoming tickets.</p>
+              <ul>
+                <li><strong>Even participant number:</strong> Work with an <strong>AI assistant</strong>.</li>
+                <li><strong>Odd participant number:</strong> Work with <strong>bot colleagues</strong>.</li>
+              </ul>
+              <p>All actions are logged anonymously.</p>
+              <p>
+                DO NOT REFRESH THE PAGE DURING THE EXPERIMENT AND DO NOT BROWSER BUTTONS BACK AND FORWARND!
+                IF YOU REFRESEHED THE PAGE, PLEASE START THE EXPERIMENT AGAIN
+              </p>
             </div>
-          </div>
 
-          <div className="section">
-            <h2>👥 Team Group</h2>
-            <ul>
-              <li>Colleagues may be online or away.</li>
-              <li>Delegate only when ticket is assigned to you.</li>
-            </ul>
-            <div className="note">
-              Colleagues almost always fail critical tickets. Handle them yourself.
+            <div className="section">
+              <h2>📅 Experiment Flow</h2>
+              <ol>
+                <li>Pre‑experiment survey</li>
+                <li>Tutorial (no time limit)</li>
+                <li>Main experiment (10 minutes)</li>
+                <li>Post‑experiment survey</li>
+                <li>Completion screen</li>
+              </ol>
             </div>
-          </div>
 
-          <div className="section">
-            <h2>📊 After the Shift</h2>
-            <p>You will see statistics about solved, missed, and critical tickets.</p>
-            <p>Then complete the final survey.</p>
-          </div>
+            <div className="section">
+              <h2>🎓 Tutorial</h2>
+              <p>Explore the interface freely.</p>
+              <ul>
+                <li><span className="button-demo">Tickets</span> – incoming tickets</li>
+                <li><span className="button-demo">Knowledge Base</span> – solution articles (e.g. kb_101)</li>
+                <li><span className="button-demo">Colleagues</span> – team members</li>
+              </ul>
 
-          <div className="section">
-            <h2>⚠ Troubleshooting</h2>
-            <ul>
-              <li>Refresh page if stuck.</li>
-              <li>Wait a few seconds for tickets to appear.</li>
-              <li>Enable browser notifications.</li>
-            </ul>
+              <p><strong>Status types:</strong></p>
+              <ul>
+                <li><span className="status-badge status-free">Free</span></li>
+                <li><span className="status-badge status-progress">In Progress</span></li>
+                <li><span className="status-badge status-solved">Solved</span></li>
+              </ul>
+
+              <p>To solve a ticket:</p>
+              <ol>
+                <li>Assign it to yourself</li>
+                <li>Read description</li>
+                <li>Check Knowledge Base</li>
+                <li>Write solution</li>
+                <li>Select article ID</li>
+                <li>Click <span className="button-demo">Complete</span></li>
+              </ol>
+
+              <div className="warning">
+                After clicking <strong>Finish Tutorial</strong>, the real experiment begins.
+              </div>
+            </div>
+
+            <div className="section">
+              <h2>⏳ Main Experiment (10 Minutes)</h2>
+              <p>Tickets appear automatically. Watch the timer.</p>
+              <p><strong>Deadlines:</strong></p>
+              <ul>
+                <li>Normal: 2 min assign / 3 min solve</li>
+                <li>Critical: 1 min assign / 1 min solve</li>
+              </ul>
+              <p>Critical tickets (🚨) require immediate attention.</p>
+            </div>
+
+            <div className="section">
+              <h2>🤖 AI Group</h2>
+              <ul>
+                <li><strong>Normal Mode:</strong> Use <span className="button-demo">Ask AI</span> for advice.</li>
+                <li><strong>Autonomous Mode:</strong> AI may take tickets automatically.</li>
+              </ul>
+              <div className="note">
+                AI performs poorly on critical tickets. Monitor them carefully.
+              </div>
+            </div>
+
+            <div className="section">
+              <h2>👥 Team Group</h2>
+              <ul>
+                <li>Colleagues may be online or away.</li>
+                <li>Delegate only when ticket is assigned to you.</li>
+              </ul>
+              <div className="note">
+                Colleagues almost always fail critical tickets. Handle them yourself.
+              </div>
+            </div>
+
+            <div className="section">
+              <h2>📊 After the Shift</h2>
+              <p>You will see statistics about solved, missed, and critical tickets.</p>
+              <p>Then complete the final survey.</p>
+            </div>
+
+            <div className="section">
+              <h2>⚠ Troubleshooting</h2>
+              <ul>
+                <li>Refresh page if stuck.</li>
+                <li>Wait a few seconds for tickets to appear.</li>
+                <li>Enable browser notifications.</li>
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
 
-      <button
-        onClick={() => setAppState('SURVEY')}
-        className="mt-6 w-full bg-cyan-500 text-black py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-cyan-600 transition-colors text-sm sm:text-base min-h-[44px]"
-      >
-        Next
-      </button>
+        <button
+          onClick={() => setAppState('SURVEY')}
+          className="mt-6 w-full bg-cyan-500 text-black py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-cyan-600 transition-colors text-sm sm:text-base min-h-[44px]"
+        >
+          Next
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden relative">
