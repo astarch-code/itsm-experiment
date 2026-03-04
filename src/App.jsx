@@ -829,7 +829,7 @@ const TicketDetailPage = ({ tickets, kb, agents, socket, navigate, areAgentsOnli
                         : 'bg-slate-800 border-white/10'}`}
                 >
                   <option value="">Attach article...</option>
-                  {kb.map(k => <option key={k.id} value={k.id}>{k.title}</option>)}
+                  {kb.map(k => <option key={k.id} value={k.id}>{k.id} – {k.title}</option>)}
                 </select>
                 <button
                   onClick={() => {
