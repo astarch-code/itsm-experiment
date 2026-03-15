@@ -1781,12 +1781,16 @@ export default function App() {
 
 
   if (appState === 'INTRO') return (
-  <div className="h-screen bg-slate-950 flex items-center justify-center p-2 sm:p-4 text-white">
-    <div className="max-w-4xl w-full bg-slate-900 p-4 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-white/10 max-h-[90vh] flex flex-col">
-      <h1 className="text-xl sm:text-3xl font-bold mb-2 sm:mb-4 text-center">Welcome to the Experiment</h1>
+  <div className="min-h-screen bg-slate-950 flex items-center justify-center p-2 sm:p-4">
+    <div className="w-full max-w-4xl bg-slate-900 rounded-2xl sm:rounded-[3rem] border border-white/10 flex flex-col max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-2rem)]">
+      
+      {/* Заголовок (фиксированная верхняя часть) */}
+      <div className="p-4 sm:p-8 border-b border-white/10">
+        <h1 className="text-xl sm:text-3xl font-bold text-center">Welcome to the Experiment</h1>
+      </div>
 
-      {/* Scrollable instruction area */}
-      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-2 sm:space-y-4 text-slate-300 text-xs sm:text-base">
+      {/* Прокручиваемая область с инструкциями */}
+      <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
         <style>{`
           * {
             margin: 0;
@@ -1798,12 +1802,11 @@ export default function App() {
             background: #0f172a;
             color: #e2e8f0;
             line-height: 1.6;
-            padding: 20px;
           }
           .container {
             max-width: 1000px;
             margin: 0 auto;
-            padding: 30px;
+            padding: 20px;
             background: rgba(15, 23, 42, 0.9);
             border-radius: 16px;
             border: 1px solid rgba(148, 163, 184, 0.2);
@@ -1884,7 +1887,7 @@ export default function App() {
             color: #fca5a5;
           }
           @media (max-width: 768px) {
-            .container { padding: 15px; }
+            .container { padding: 10px; }
             .header h1 { font-size: 2rem; }
           }
         `}</style>
@@ -1904,9 +1907,9 @@ export default function App() {
             </ul>
             <p>All actions are logged anonymously.</p>
             <p>More detailed instructions will be available in the tutorial and throughout the experiment.</p>
-            <p>
-              DO NOT REFRESH THE PAGE DURING THE EXPERIMENT AND DO NOT BROWSER BUTTONS BACK AND FORWARND!
-              IF YOU REFRESEHED THE PAGE, PLEASE START THE EXPERIMENT AGAIN
+            <p className="text-rose-400 font-bold text-sm">
+              DO NOT REFRESH THE PAGE DURING THE EXPERIMENT AND DO NOT USE BROWSER BACK/FORWARD BUTTONS!<br />
+              IF YOU REFRESHED THE PAGE, PLEASE START THE EXPERIMENT AGAIN.
             </p>
           </div>
 
@@ -1995,12 +1998,15 @@ export default function App() {
         </div>
       </div>
 
-      <button
-        onClick={() => setAppState('SURVEY')}
-        className="mt-2 sm:mt-6 w-full bg-cyan-500 text-black py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-cyan-600 transition-colors text-sm sm:text-base min-h-[44px]"
-      >
-        Next
-      </button>
+      {/* Кнопка перехода к опросу (всегда видна) */}
+      <div className="p-4 sm:p-8 border-t border-white/10">
+        <button
+          onClick={() => setAppState('SURVEY')}
+          className="w-full bg-cyan-500 text-black py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest hover:bg-cyan-600 transition-colors text-sm sm:text-base min-h-[44px]"
+        >
+          Next
+        </button>
+      </div>
     </div>
   </div>
 );
